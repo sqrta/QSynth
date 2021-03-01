@@ -13,11 +13,18 @@ def z3Show(s):
 def BVtrunc(vec, upper, lower=0):
     '''
     return vec[lower: upper](include upper) still has the same length as vec
+    BVtrunc(01101, 2, 1) = 00010 (01 "10" 1)
+    BVtrunc(01101, 3, 2) = 00011 (0 "11" 01)
     '''
     return LShR((vec << (MAXL - upper - 1)), (MAXL - upper - 1 + lower))
 
 
 def BVref(vec, index):
+    '''
+    return vec[index]. still has the same length as vec. 
+    BVref(00100, 2) = 00001
+    BVref(00100, 3) = 00000
+    '''
     return BVtrunc(vec, index, index)
 
 
