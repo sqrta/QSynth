@@ -52,10 +52,12 @@ solve(x>>4==y)
 
 g = BVsum(lambda m: BVref(bv(0), m), n)
 bvSum = RecFunction('bvSum', BitVecSort(MAXL), BitVecSort(MAXL))
+f= Function('f', BitVecSort(MAXL), BitVecSort(MAXL))
 RecAddDefinition(bvSum, n, If(n > 0, BVref(x, n)+bvSum(n-1), BitVecVal(0, MAXL)))
-s.add(x==0)
+s.add(x>0)
 s.add(ForAll(
-    [n], Implies(And(n<10,n>4, x==0), bvSum(n)==0)))
+    [n], n + n == x*n
+    ))
 z3Show(s)
 '''
 y = BV2Int(yb)
