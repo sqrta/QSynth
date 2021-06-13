@@ -14,6 +14,31 @@ class component:
     def My(self):
         return None
 
+    def __str__(self) -> str:
+        return self.name
+
+class CRZ0N(component):
+    def alpha(self, n, x, y):
+        Eq = delta(BVtrunc(x, n), BVtrunc(y, n))
+        return sumPhase([phase(Eq, BVref(x,0))])
+
+    def Mx(self):
+        return [lambda n,y : y]
+
+    def My(self):
+        return [lambda n,x : x]
+
+class move1(component):
+    def alpha(self, n, x, y):
+        Eq = delta(BVtrunc(x, n-1), BVtrunc(y, n, 1)) * delta(BVref(y,0), bv(0))
+        return sumPhase([phase(Eq, bv(0))])
+
+    def Mx(self):
+        return [lambda n,y : BVtrunc(y, n, 1), lambda n,y : BVtrunc(y, n, 1) | 1 << n]
+
+    def My(self):
+        return [lambda n,x : BVtrunc(x, n-1)<<1, lambda n,x : BVtrunc(x, n-1)<<1 | bv(1)]
+
 class CRZN(component):
     def alpha(self, n, x, y):
         Eq = delta(BVtrunc(x, n-1), BVtrunc(y, n-1))

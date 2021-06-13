@@ -1,11 +1,5 @@
 from z3tool import *
 
-def bvprint(model, a, msg=""):
-    if not model:
-        return
-    tmp = model.evaluate(a).as_binary_string()
-    print(tmp, len(tmp), msg)
-
 class phase:
     def __init__(self, delta, bv) -> None:
         self.delta = delta
@@ -47,6 +41,9 @@ class sumPhase:
     def z3exp(self):
         sumph = [p.value() for p in self.phases]
         return sum(sumph)
+
+    def deltas(self):
+        return sum([p.delta for p in self.phases])
 
     def multi(self, other):
         phase = []

@@ -16,7 +16,8 @@ def BVtrunc(vec, upper, lower=0):
     BVtrunc(01101, 2, 1) = 00010 (01 "10" 1)
     BVtrunc(01101, 3, 2) = 00011 (0 "11" 01)
     '''
-    return LShR((vec << (MAXL - upper - 1)), (MAXL - upper - 1 + lower))
+    correctr = LShR((vec << (MAXL - upper - 1)), (MAXL - upper - 1 + lower))
+    return (If(upper>= lower, correctr, bv(0)))
 
 
 def BVref(vec, index):
@@ -30,6 +31,9 @@ def BVref(vec, index):
 
 def delta(a, b):
     return If(a == b, BitVecVal(1, MAXL), BitVecVal(0, MAXL))
+
+def ndelta(a, b):
+    return If(a != b, BitVecVal(1, MAXL), BitVecVal(0, MAXL))
 
 def BVsum(f,n,init=0):
     bvSum = RecFunction('bvSum', BitVecSort(MAXL), BitVecSort(MAXL))
@@ -60,6 +64,13 @@ def foo(vec):
     for i in range(a):
         tmp = tmp + 1
     return tmp
+
+def bvprint(model, a, msg=""):
+    if not model:
+        return
+    tmp = model.evaluate(a).as_binary_string()
+    print(tmp, len(tmp), msg)
+
 
 if __name__ == '__main__':
     s = Solver()
