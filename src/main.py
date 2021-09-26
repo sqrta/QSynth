@@ -20,7 +20,15 @@ def QFT(n, x, y):
 
 def QFTspec(n, x, y):
     u = BVtrunc(x, n)*reverse(BVtrunc(y, n), n)
-    return [(1, BVtrunc(u, n))]
+    return [(bv(1), BVtrunc(u, n))]
+
+def Adderspec(n, x, y):
+    Eq1 = delta(BVtrunc(x, n/2, 1), BVtrunc(y, n/2, 1))
+    addone = BVtrunc(x, n/2, 1) + BVtrunc(x,n,n/2+1) + BVref(x,0)
+    result = BVtrunc(y,n, n/2 + 1) | BVref(y,0)<<(n/2)
+    Eq2 = delta(BVtrunc(addone, n/2),  BVtrunc(result, n/2))
+    return [(Eq1*Eq2, bv(0))]
+
 
 
 def reverseb(n, width):
@@ -36,8 +44,14 @@ def QFTex(k):
                 examples.append([j*reverseb(t, i) % 2**k, i-1, j, t])
     return examples
 
+def Adderex(k):
+    examples = []
+    for i in range(1, k+1):
+        for j in range(2**i):
+            for t in range(2**i):
+                examples.append([j*reverseb(t, i) % 2**k, i-1, j, t])    
 
-examples = QFTex(1)
+examples = [[0, 0, 1, 1], [0,0,0,0], [0, 2, 0b011, 0b011], [0, 2, 0b010, 0b110], [0,4,0b00101, 0b11100]]
 
 
 def examplesFunc(n, x, y):
@@ -49,7 +63,7 @@ def examplesFunc(n, x, y):
 
 def examplespec(n, x, y):
     tmp = examplesFunc(n, x, y)
-    return [(1, tmp)]
+    return [(bv(1), tmp)]
 
 
 def getpre(n, x, y):
@@ -64,12 +78,13 @@ def Hnspec(n, x, y):
     result = BVref(x,n) & BVref(y,n)
     return [(Eq, result << n)]
 
+def IDspec(n,x,y):
+    return [(delta(x,y), bv(0))]
+
 
 if __name__ == "__main__":
-    database = [H0("H 0"), HN("H n"), CRZN("C_RZN n"), move1("move 1")]
-    '''
-    print(search(Hnspec, database, "left"))
-    '''
+    database = [H0("H 0"), HN("H n"), CRZN("C_RZN n"), move1("move 1"), Ident('I'), MAJN("OneBitAdd n-1 n 0 ; SWAP n-1 n/2")]
+    '''     
     print("Examples: list[0] = alpha(n,x,y)")
     exStr = [strEx(i) for i in examples]
     for ex in exStr:
@@ -80,9 +95,12 @@ if __name__ == "__main__":
     #print(examplesFunc(n,x,y))
     a = [And(x == 0, y == 1), And(x == 1, y == 2)]
     
-    prog=search(examplespec, database,'left', lambda n, x, y: And(getpre(n, x, y)))
+    gb,gi=search(examplespec, database,'left', lambda n, x, y: And(getpre(n, x, y)),1)
     print("\nResult Program:")
-    crznProg = showProg(H0("H 0"), CRZ0N("move 1; C_RZ 0 n"), 'right', "C_RZN")
+    crznProg = showProg([H0("H 0")], CRZ0N("move 1; C_RZ 0 n"), 'right', "C_RZN")
     print(crznProg + "\n")    
-    print(prog)
-    
+    print(showProg(gb, gi, 'left', 'QFT'))
+    '''
+    gb, gi = search(Adderspec, database, 'right', lambda n,x,y : BVref(n,0)==0, 2, 2)
+    print(showProg(gb,gi,'right', 'Adder', "-2"))
+   

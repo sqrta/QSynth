@@ -56,3 +56,5 @@ class sumPhase:
         for phase in self.phases:
             phase.multiDelta(delta)
 
+def getSumPhase(phases):
+    return sumPhase([phase(p[0],p[1]) for p in phases])
