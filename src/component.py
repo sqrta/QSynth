@@ -9,10 +9,11 @@ class component:
         return None
 
     def Mx(self):
-        return [lambda n,z : z]
+        raise(self.name+" does not have Mx")
+        
 
     def My(self):
-        return [lambda n,z : z]
+        raise(self.name+" does not have My")
 
     def __str__(self) -> str:
         return self.name
@@ -91,6 +92,23 @@ class HN(component):
         return [lambda n, x: BVtrunc(x, n-1) | bv(0) << n,
                 lambda n, x: BVtrunc(x, n-1) | bv(1) << n]
 
+class nparH(component):
+    def alpha(self, n, x, y):
+        return getSumPhase([(If(andSum(x,y)==1, bv(-1), bv(1)),bv(0))])
+
+def oracleFunc(x, length = MAXL):
+    return bv(1)
+
+class DeuJozsaOracle(component):
+    def alpha(self, n, x, y):
+        Eqtrivial = delta(BVtrunc(x,n,1), BVtrunc(y,n,1))    
+        Eqoracle = delta(BVref(y,0), BVref(x,0) ^ oracleFunc(BVtrunc(x,n,1)))
+        return getSumPhase([(Eqtrivial*Eqoracle, bv(0))])
+    
+    def Mx(self):
+        return [lambda n,y: BVref(y,0)^oracleFunc(BVtrunc(y,n,1)) | (BVtrunc(y,n,1)<<1)]
+    def My(self):
+        return [lambda n,x: BVref(x,0)^oracleFunc(BVtrunc(x,n,1)) | (BVtrunc(x,n,1)<<1)]
 
 def oneBitAdder(x, y, a, b, c):
     Eq1 = delta(BVref(x, a), BVref(y, a))
@@ -119,3 +137,17 @@ class Ident(component):
 
     def My(self):
         return [lambda n,z : z]
+
+if __name__ == '__main__':
+    a = nparH('nparH')
+    b = DeuJozsaOracle('Uo')
+    f = b.Mx()[0]
+    
+    n,x,y = BitVecs('n x y', MAXL)
+    terms = rightMultiAlpha(b, lambda n,x,y: a.alpha(n,x,y),n,bv(1),y)
+    solve(b.alpha(n,x,y).deltas()==1)
+    simplify(terms[0].z3exp())
+    z3term = sum([term.deltas() for term in terms])
+    s=Solver()
+    s.add(ForAll([n,y], z3term == If(BVref(y,0)^ bv(1)==0, bv(1),bv(-1))))
+    print(s.check())

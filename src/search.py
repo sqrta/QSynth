@@ -40,14 +40,6 @@ def inductk(foo, k, n, x, y):
         indsumph = [phase(truncEq*p[0], p[1] << k) for p in sumph]
     return sumPhase(indsumph)
 
-def leftMultiAlpha(compon, alpha, n, x, y):
-    terms = []
-    for foo in compon.My():
-        z = foo(n, x)
-        terms.append(compon.alpha(n, x, z)*alpha(n, z, y))
-    return sum(terms)
-
-
 def verifyBase(compon, spec, pre, k):
     if k < 0:
         return unsat
@@ -87,15 +79,14 @@ def verifyInduct(compon, spec, pre,dir, k=1):
     left = inductk(spec, 0, n, x, y).z3exp()
     terms = []
     if dir=='left':
-        for foo in compon.My():
-            z = foo(n, x)
-            terms.append(sumPhaseMulti(compon.alpha(n, x, z),
-                                    inductk(spec, k, n, z, y)))
+        terms = leftMultiAlpha(compon, lambda n,x,y: inductk(spec,k,n,x,y), n,x,y)
     elif dir=='right':
+        terms = rightMultiAlpha(compon, lambda n,x,y: inductk(spec,k,n,x,y), n,x,y)
+        '''
         for foo in compon.Mx():
             z = foo(n, y)
             terms.append(sumPhaseMulti(compon.alpha(n, z, y),
-                                    inductk(spec, k, n, x, z)))        
+                                    inductk(spec, k, n, x, z)))    '''    
 
     right = sum([term.z3exp() for term in terms])
     rightDelta = sum([term.deltas() for term in terms])

@@ -94,9 +94,12 @@ def count(vector,length):
 def xorSum(x,y,length=MAXL):
     return BVref(count(x^y, length), 0)
 
+def andSum(x,y,length=MAXL):
+    return BVref(count(x&y, length), 0)
+
 if __name__ == '__main__':
     s = Solver()
-    x = BitVec('x', MAXL)
+    x,y = BitVecs('x y', MAXL)
     one = RepeatBitVec(MAXL, BitVecVal(1, 1)) 
     print(BVRedAnd(one))
-    solve(BVReductAnd(x,2) == bv(1))
+    solve(And(andSum(x,y) == bv(1),x<10,y<10, x>0,y>0))
