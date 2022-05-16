@@ -78,12 +78,16 @@ def Hnspec(n, x, y):
     result = BVref(x,n) & BVref(y,n)
     return [(Eq, result << n)]
 
+def GHZspec(n, x, y):
+    Eq = delta(BVtrunc(y,n), bv(0)) | delta(BVtrunc(y,n), (bv(1)<<(n+1)) -1)
+    return [(Eq, bv(0))]
+
 def IDspec(n,x,y):
     return [(delta(x,y), bv(0))]
 
 
 if __name__ == "__main__":
-    database = [H0("H 0"), HN("H n"), CRZN("C_RZN n"), move1("move 1"), Ident('I'), MAJN("OneBitAdd n-1 n 0 ; SWAP n-1 n/2")]
+    database = [H0("H", ['0']), HN("H", ['n']), CRZN("C_RZN", ['n']), move1("move 1"), Ident('I'), MAJN("OneBitAdd n-1 n 0 ; SWAP n-1 n/2"), CNOT('CNOT', ['n-1', 'n'])]
     '''     
     print("Examples: list[0] = alpha(n,x,y)")
     exStr = [strEx(i) for i in examples]
@@ -101,6 +105,7 @@ if __name__ == "__main__":
     print(crznProg + "\n")    
     print(showProg(gb, gi, 'left', 'QFT'))
     '''
-    gb, gi = search(Adderspec, database, 'right', lambda n,x,y : BVref(n,0)==0, 2, 2)
-    print(showProg(gb,gi,'right', 'Adder', "-2"))
+    #gb, gi = search(QFTspec, database, 'left', lambda n,x,y : True, 1, 1)
+    gb, gi = search(GHZspec, database, 'right', lambda n,x,y : x==bv(0), 1, 1)
+    print(showProg(gb, None,gi, 'GHZ', "-1","qsharp"))
    

@@ -15,17 +15,21 @@ def basek(foo, intk, n, x, y):
     sumph = foo(k, xk, yk)
     return sumPhase([phase(p[0], p[1]) for p in sumph])
 
-def inductk(foo, k, n, x, y):
+def inductk(foo, k, n, x, y,move=0):
     if k < 0:
         return None
     if k == 0:
         return sumPhase([phase(p[0], p[1]) for p in foo(n, x, y)])
     indsumph = None
     if k==1:
-        xk = BVtrunc(x, n-k)
-        yk = BVtrunc(y, n-k)
+        xk = BVtrunc(x, n-k)<<move
+        yk = BVtrunc(y, n-k)<<move
         sumph = foo(n-k, xk, yk)
-        truncEq = delta(BVtrunc(x, n, n-k+1), BVtrunc(y, n, n-k+1))
+        truncEq = 1
+        if move<k:
+            truncEq*=delta(BVtrunc(x, n, n-k+1+move), BVtrunc(y, n, n-k+1+move))
+        if move>0:
+            truncEq *= delta(BVtrunc(x,move-1,0), BVtrunc(y,move-1,0))
         indsumph = [phase(truncEq*p[0], p[1] << k) for p in sumph]
         
     elif k==2:
@@ -70,7 +74,7 @@ def verifyBase(compon, spec, pre, k):
         return unsat
 
 
-def verifyInduct(compon, spec, pre,dir, k=1):
+def verifyInduct(compon, spec, pre,dir, k=1,move=0):
     xo, yo, n = BitVecs('x y n', MAXL)
     x = BVtrunc(xo, n)
     y = BVtrunc(yo, n)
@@ -79,9 +83,9 @@ def verifyInduct(compon, spec, pre,dir, k=1):
     left = inductk(spec, 0, n, x, y).z3exp()
     terms = []
     if dir=='left':
-        terms = leftMultiAlpha(compon, lambda n,x,y: inductk(spec,k,n,x,y), n,x,y)
+        terms = leftMultiAlpha(compon, lambda n,x,y: inductk(spec,k,n,x,y,move), n,x,y)
     elif dir=='right':
-        terms = rightMultiAlpha(compon, lambda n,x,y: inductk(spec,k,n,x,y), n,x,y)
+        terms = rightMultiAlpha(compon, lambda n,x,y: inductk(spec,k,n,x,y,move), n,x,y)
         '''
         for foo in compon.Mx():
             z = foo(n, y)
@@ -131,27 +135,66 @@ def verifyInduct(compon, spec, pre,dir, k=1):
         return unsat
 
 
-def showProg(base, induct, dir, name="foo", inductExp="-1"):
-    if not base or not induct:
-        print(base, induct)
+def showProg(base, left=None, right=None, name="foo", inductExp="-1", backend = "sqir"):
+    if not base:
         return "No solutions"
-    prog = "Fixpoint "+name + " (n : nat) : Unitary :=\n"
-    prog += "\t match n with\n"
-    for i in range(len(base)):
-        prog += "\t\t | " + str(i)+ " => " + base[i].name + "\n"
-    if dir == 'right':
-        prog += "\t\t | _ => " + name + " n" + inductExp +"; " + induct.name + "\n"
-    else:
-        prog += "\t\t | S n' => " + induct.name + '; ' + name + " n" + inductExp + "\n"
-    prog += "\t end."
+    prog = ""
+    if backend == 'sqir':
+        def sqirName(ins):
+            return ins.name + " " + " ".join([str(i) for i in ins.registers])
+
+        prog += "Fixpoint "+name + " (n : nat) : Unitary :=\n"
+        prog += "\t match n with\n"
+        for i in range(len(base)):
+            prog += "\t\t | " + str(i)+ " => " + sqirName(base[i]) + "\n"
+        prog +="\t\t | _ => "
+        if left:
+            prog += sqirName(left) + ";"
+        prog += name + " n" + inductExp +"; "
+        if right:
+            prog +=  sqirName(right)
+        prog += "\n\t end."
+    elif backend == 'qiskit':
+        def qiskitName(ins):
+            nameMap = {'CNOT':"cx", "H":'h'}
+            gate = nameMap.get(ins.name, ins.name)
+            return gate + "(" + ",".join([str(i) for i in ins.registers]) + ")"
+
+        def circCall(ins, circ="circ"):
+            return circ+"." + qiskitName(ins)
+
+        prog += "def " + name + "(circ, n):\n"
+        for i in range(len(base)):
+            prog+= "\tif(n==" + str(i) + "):\n"
+            prog += "\t"*2+circCall(base[i]) + "\n\t\treturn\n"
+        if left:
+            prog += "\tcirc." + qiskitName(left) + "\n"
+        prog += "\t" + name + "(circ,n-1)\n"
+        if right:
+            prog += "\tcirc." + qiskitName(right) + "\n"
+    elif backend == 'qsharp':
+        def qsharpName(ins):
+            nameMap = {'CZ':"(Controlled Z)"}
+            gate = nameMap.get(ins.name, ins.name)
+            return gate + "(" + ",".join(["q["+str(i)+"]" for i in ins.registers]) + ");"
+        prog += "Operation " + name + "(q : Qubit[], n : Int) : Unit{\n"
+        for i in range(len(base)):
+            prog+= "\tif (n==" + str(i) + "){\n"
+            prog += "\t"*2+qsharpName(base[i]) + "\n\t\treturn ();\n\t}\n"
+        if left:
+            prog += "\t" + qsharpName(left) + "\n"
+        prog += "\t" + name + "(q,n-1);\n"
+        if right:
+            prog += "\t" + qsharpName(right) + "\n"
+        prog += "}"
     return prog
 
 
-def search(spec, database, dir,  pre=None,b=1, k=1):
+def search(spec, database, dir,  pre=None,base=1, k=1,move=0):
     gb = []
     gi = component('None')
     start = time.time()
-    for i in range(b):
+    for i in range(base):
         tmp = None
         for item in database:
             rb = verifyBase(item, spec, pre, i)
@@ -168,7 +211,7 @@ def search(spec, database, dir,  pre=None,b=1, k=1):
     print("Base step uses {0}s".format(end-start))
     start = time.time()
     for item in database:
-        ri = verifyInduct(item, spec, pre, dir, k)
+        ri = verifyInduct(item, spec, pre, dir, k,move)
         if ri == sat:
             gi = item
             break

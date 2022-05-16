@@ -1,9 +1,16 @@
 from adt import *
 
-
+Uo=BitVec('f', MAXL)
 class component:
-    def __init__(self, name) -> None:
+    def __init__(self, name, registers=None) -> None:
         self.name = name
+        if not registers:
+            self.registers = []
+        else:
+            self.registers = registers
+
+    def getName(self):
+        return self.name
 
     def alpha(self, n, x, y):
         return None
@@ -92,12 +99,27 @@ class HN(component):
         return [lambda n, x: BVtrunc(x, n-1) | bv(0) << n,
                 lambda n, x: BVtrunc(x, n-1) | bv(1) << n]
 
+class CNOT(component):
+    def alpha(self, n, x, y):
+        Eq = If(n >= 1, delta(BVtrunc(x, n-1), BVtrunc(y, n-1)), bv(1))
+        d0 = Eq*delta(BVref(y, n), BVref(y,n-1) ^ BVref(x,n))
+        return sumPhase([phase(d0, bv(0))])
+
+    def Mx(self):
+        return [lambda n, y: BVtrunc(y, n-1) | bv(0) << n,
+                lambda n, y: BVtrunc(y, n-1) | bv(1) << n]
+
+    def My(self):
+        return [lambda n, x: BVtrunc(x, n-1) | bv(0) << n,
+                lambda n, x: BVtrunc(x, n-1) | bv(1) << n]
+
 class nparH(component):
     def alpha(self, n, x, y):
         return getSumPhase([(If(andSum(x,y)==1, bv(-1), bv(1)),bv(0))])
 
 def oracleFunc(x, length = MAXL):
-    return bv(1)
+    global Uo
+    return BVref(Uo,0)
 
 class DeuJozsaOracle(component):
     def alpha(self, n, x, y):
@@ -149,5 +171,5 @@ if __name__ == '__main__':
     simplify(terms[0].z3exp())
     z3term = sum([term.deltas() for term in terms])
     s=Solver()
-    s.add(ForAll([n,y], z3term == If(BVref(y,0)^ bv(1)==0, bv(1),bv(-1))))
+    s.add(ForAll([n,y,Uo], z3term == If(BVref(y,0)^ oracleFunc(BVtrunc(y,n,1))==0, bv(1),bv(-1))))
     print(s.check())
