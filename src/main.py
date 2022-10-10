@@ -87,25 +87,10 @@ def IDspec(n,x,y):
 
 
 if __name__ == "__main__":
-    database = [H0("H", ['0']), HN("H", ['n']), CRZN("C_RZN", ['n']), move1("move 1"), Ident('I'), MAJN("OneBitAdd n-1 n 0 ; SWAP n-1 n/2"), CNOT('CNOT', ['n-1', 'n'])]
-    '''     
-    print("Examples: list[0] = alpha(n,x,y)")
-    exStr = [strEx(i) for i in examples]
-    for ex in exStr:
-        print(', '.join(ex))
-    
-    print('')
-    x, y, n = BitVecs("x y n", MAXL)
-    #print(examplesFunc(n,x,y))
-    a = [And(x == 0, y == 1), And(x == 1, y == 2)]
-    
-    gb,gi=search(examplespec, database,'left', lambda n, x, y: And(getpre(n, x, y)),1)
-    print("\nResult Program:")
-    crznProg = showProg([H0("H 0")], CRZ0N("move 1; C_RZ 0 n"), 'right', "C_RZN")
-    print(crznProg + "\n")    
-    print(showProg(gb, gi, 'left', 'QFT'))
-    '''
-    #gb, gi = search(QFTspec, database, 'left', lambda n,x,y : True, 1, 1)
-    gb, gi = search(GHZspec, database, 'right', lambda n,x,y : x==bv(0), 1, 1)
-    print(showProg(gb, None,gi, 'GHZ', "-1","qsharp"))
+    from component import database
+
+    # gb, gi = search(QFTspec, database, 'left', lambda n,x,y : True, 1, 1)
+    # gb, gi = search(GHZspec, database, 'right', lambda n,x,y : x==bv(0), 1, 1)
+    gb, gi = search(Adderspec, database, 'right', lambda n,x,y : n%2==0, 1, 2,1)
+    print(showProg(gb, None,gi, 'GHZ', "-1"))
    
