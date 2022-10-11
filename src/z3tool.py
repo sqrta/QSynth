@@ -1,8 +1,9 @@
 
+from unittest import result
 from z3 import *
 
 MAXL = 16
-SPACE = 8
+SPACE = 10
 ORACLEL = 2**SPACE
 
 def z3Show(s):
@@ -79,8 +80,12 @@ def foo(vec):
 def bvprint(model, a, msg=""):
     if not model:
         return
-    tmp = model.evaluate(a).as_binary_string()
-    print(tmp, len(tmp), msg)
+    result = model.evaluate(a)
+    if isinstance(result, BoolRef):
+        print(result, msg)
+    else:
+        tmp = result.as_binary_string()
+        print(tmp, len(tmp), msg)
 
 
 def count(vector,length):

@@ -78,3 +78,11 @@ def rightMultiAlpha(compon, alpha, n, x, y):
         z = foo(n, y)
         terms.append(sumPhaseMulti(alpha(n, x, z),compon.alpha(n, z, y)))
     return terms
+
+class Spec:
+    def __init__(self) -> None:
+        self.args = {}
+
+    def alpha(self,n,x,y):
+        raise NotImplementedError()
+        

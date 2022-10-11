@@ -29,7 +29,12 @@ def Adderspec(n, x, y):
     Eq2 = delta(BVtrunc(addone, n/2),  BVtrunc(result, n/2))
     return [(Eq1*Eq2, bv(0))]
 
-
+def rippleAdderSpec(n,x,y):
+    Eq1 = delta(BVtrunc(x, 2*n, 1), BVtrunc(y, 2*n, 1))
+    addone = BVtrunc(x, n, 1) + BVtrunc(x,2*n,n+1) + BVref(x,0)
+    result = BVtrunc(y, 3*n, 2*n + 1) | BVref(y,0)<<n
+    Eq2 = delta(BVtrunc(addone, n),  BVtrunc(result, n))
+    return [(Eq1*Eq2, bv(0))]
 
 def reverseb(n, width):
     b = '{:0{width}b}'.format(n, width=width)
@@ -89,8 +94,12 @@ def IDspec(n,x,y):
 if __name__ == "__main__":
     from component import database
 
-    # gb, gi = search(QFTspec, database, 'left', lambda n,x,y : True, 1, 1)
-    # gb, gi = search(GHZspec, database, 'right', lambda n,x,y : x==bv(0), 1, 1)
-    gb, gi = search(Adderspec, database, 'right', lambda n,x,y : n%2==0, 1, 2,1)
+    gb, gi = search(QFTspec, database, 'left', lambda n,x,y : And(ULT(x,(bv(2)<<n)), ULT(y, (bv(2)<<n))), 1, 1)
+    print(showProg(gb, gi,None, 'QFT', "-1"))
+    gb, gi = search(GHZspec, database, 'right', lambda n,x,y : x==bv(0), 1, 1)
     print(showProg(gb, None,gi, 'GHZ', "-1"))
+    gb, gi = search(Adderspec, database, 'right', lambda n,x,y : n%2==0, 1, 2,1)
+    print(showProg(gb, None,gi, 'adder', "-1"))
+    gb, gi = search(rippleAdderSpec, database, 'right', lambda n,x,y : And(BVref(x,0)==0, ULT(x, bv(1)<<2*n+1)), 1, 3, size=lambda x: 3*x)
+    print(showProg(gb, None,gi, 'adder', "-1"))
    

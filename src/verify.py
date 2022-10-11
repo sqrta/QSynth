@@ -68,18 +68,15 @@ def verifyBase(compon, spec, pre, k, size):
     if r == unsat:
         return sat
     else:
-        ''' 
-        if compon.name=='H':
-            print(k, compon.name, compon.registers)
+        '''
+        if k==0 and compon.name=='I':
+            print(k, compon.name)
             print(s.model())
-            bvprint(s.model(), x, "x")
-            bvprint(s.model(), y, "y")
-            bvprint(s.model(), BVtrunc(x, n)*reverse(BVtrunc(y, n), n), "left_should")
-            bvprint(s.model(), left.deltas(), "leftdelta")
-            bvprint(s.model(), right.deltas(), 'rightdelta')
-            bvprint(s.model(), left.z3exp(), "left")
-            bvprint(s.model(), right.z3exp(), "right")
-           
+            bvprint(s.model(), left.deltas())
+            bvprint(s.model(), right.deltas())
+            bvprint(s.model(), left.z3exp())
+            bvprint(s.model(), right.z3exp())
+            
         '''
         return unsat
 
@@ -121,7 +118,7 @@ def verifyInduct(compon, spec, pre,dir, k=1,move=0, size=lambda x:x):
     if r == unsat:
         return sat
     else:
-        '''
+        
         if compon.name == "SJ":
             print(s.model())
             bvprint(s.model(), x, 'x')       
@@ -131,7 +128,7 @@ def verifyInduct(compon, spec, pre,dir, k=1,move=0, size=lambda x:x):
             bvprint(s.model(), leftDelta, "leftdelta")
             bvprint(s.model(), rightDelta, "rightdelta")
 
-        
+        '''
         '''   
         return unsat
 

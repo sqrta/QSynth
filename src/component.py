@@ -70,7 +70,7 @@ class CRZN(component):
 
 class H0(component):
     def alpha(self, n, x, y):
-        Eq = If(n > 0, delta(BVtrunc(x, n, 1), BVtrunc(y, n, 1)), bv(1))
+        Eq = If(ULT(n,0), delta(BVtrunc(x, n, 1), BVtrunc(y, n, 1)), bv(1))
         d0 = Eq*delta(BVref(y, 0), bv(0))
         d1 = Eq*delta(BVref(y, 0), bv(1))
         return getSumPhase([(d0, bv(0)), (d1, BVref(x, 0))])
@@ -86,7 +86,7 @@ class H0(component):
 
 class HN(component):
     def alpha(self, n, x, y):
-        Eq = If(n > 0, delta(BVtrunc(x, n-1), BVtrunc(y, n-1)), bv(1))
+        Eq = If(ULT(n , 0), delta(BVtrunc(x, n-1), BVtrunc(y, n-1)), bv(1))
         d0 = Eq*delta(BVref(y, n), bv(0))
         d1 = Eq*delta(BVref(y, n), bv(1))
         return sumPhase([phase(d0, bv(0)), phase(d1, BVref(x, n))])
@@ -148,6 +148,18 @@ class MAJN(component):
     def My(self):
         return [lambda n, y: BVtrunc(y, n-1, 1)<<1 | bv(1), lambda n, y: BVtrunc(y, n-1, 1)<<1, lambda n, y: BVtrunc(y, n-1, 1)<<1 | bv(1) << n, lambda n, y: BVtrunc(y, n-1, 1)<<1 | (bv(1) | bv(1) << n)]
 
+class rippleAdder(component):
+    def alpha(self, n, x, y):
+        Eq1 = delta(BVtrunc(x, 3*n-1, 1), BVtrunc(y, 3*n-1, 1))
+        Eq2 = delta(BVref(y, 3*n), BVref(BVref(x, n) + BVref(x, 2*n) + BVref(x, 0), 0))
+        Eq3 = delta(BVref(y,0), BVref(BVref(x, n) + BVref(x, 2*n) + BVref(x, 0), 1))
+        return getSumPhase([(Eq1*Eq2*Eq3, bv(0))])
+
+    def Mx(self):
+        return [lambda n, y: BVtrunc(y, 3*n-1, 1)<<1 | bv(1), lambda n, y: BVtrunc(y, 3*n-1, 1)<<1, lambda n, y: BVtrunc(y, 3*n-1, 1)<<1 | bv(1) << (3*n), lambda n, y: BVtrunc(y, 3*n-1, 1)<<1 | (bv(1) | bv(1) << (3*n))]
+
+    def My(self):
+        return [lambda n, y: BVtrunc(y, 3*n-1, 1)<<1 | bv(1), lambda n, y: BVtrunc(y, 3*n-1, 1)<<1, lambda n, y: BVtrunc(y, 3*n-1, 1)<<1 | bv(1) << (3*n), lambda n, y: BVtrunc(y, 3*n-1, 1)<<1 | (bv(1) | bv(1) << (3*n))]
 
 class Ident(component):
     def alpha(self, n, x, y):
@@ -174,7 +186,7 @@ if __name__ == '__main__':
     s.add(ForAll([n,y,Uo], z3term == If(BVref(y,0)^ oracleFunc(BVtrunc(y,n,1))==0, bv(1),bv(-1))))
     print(s.check())
 
-database = [H0("H", ['0']), HN("H", ['n']), CRZN("C_RZN", ['n']), move1("move 1"), Ident('I'), MAJN("OneBitAdd n-1 n 0 ; SWAP n-1 n/2"), CNOT('CNOT', ['n-1', 'n'])]
+database = [Ident('I'),H0("H", ['0']), HN("H", ['n']), CRZN("C_RZN", ['n']), move1("move 1"),  MAJN("OneBitAdd n-1 n 0 ; SWAP n-1 n/2"), CNOT('CNOT', ['n-1', 'n']), rippleAdder("SJ")]
 
 '''     
 print("Examples: list[0] = alpha(n,x,y)")
