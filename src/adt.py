@@ -63,20 +63,18 @@ def getSumPhase(phases):
     return sumPhase([phase(p[0],p[1]) for p in phases])
 
 def leftMultiAlpha(compon, alpha, n, x, y):
-    terms = []
-    for foo in compon.My():
-        z = foo(n, x)
-        terms.append(sumPhaseMulti(compon.alpha(n, x, z), alpha(n, z, y)))
+    terms = sumPhase([])
+    for z in compon.Mx(n,x):
+        terms.phases+=sumPhaseMulti(compon.alpha(n, x, z), alpha(n, z, y)).phases
     return terms
 
 def rightMultiAlpha(compon, alpha, n, x, y):
     '''
     multiply a sparse component on the right side of alpha
     '''
-    terms = []
-    for foo in compon.Mx():
-        z = foo(n, y)
-        terms.append(sumPhaseMulti(alpha(n, x, z),compon.alpha(n, z, y)))
+    terms = sumPhase([])
+    for z in compon.My(n,y):
+        terms.phases+=sumPhaseMulti(alpha(n, x, z),compon.alpha(n, z, y)).phases
     return terms
 
 class Spec:

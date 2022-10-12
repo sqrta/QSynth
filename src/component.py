@@ -1,4 +1,12 @@
 from adt import *
+import itertools
+from functools import reduce
+ 
+def findsubsets(s, n):
+    return list(itertools.combinations(s, n))
+
+def allsubset(s):
+    return reduce(lambda a,b: a+b, [findsubsets(s, i) for i in range(len(s)+1)])
 
 Uo=BitVec('f', MAXL)
 class component:
@@ -15,11 +23,11 @@ class component:
     def alpha(self, n, x, y):
         return None
 
-    def Mx(self):
+    def Mx(self,n,x):
         raise(self.name+" does not have Mx")
         
 
-    def My(self):
+    def My(self,n,y):
         raise(self.name+" does not have My")
 
     def __str__(self) -> str:
@@ -31,11 +39,11 @@ class CRZ0N(component):
         Eq = delta(BVtrunc(x, n), BVtrunc(y, n))
         return sumPhase([phase(Eq, BVref(x, 0))])
 
-    def Mx(self):
-        return [lambda n, y: y]
+    def My(self, n, y):
+        return [ y]
 
-    def My(self):
-        return [lambda n, x: x]
+    def Mx(self, n, x):
+        return [x]
 
 
 class move1(component):
@@ -44,11 +52,11 @@ class move1(component):
             delta(BVref(y, 0), bv(0))
         return getSumPhase([(Eq, bv(0))])
 
-    def Mx(self):
-        return [lambda n, y: BVtrunc(y, n, 1), lambda n, y: BVtrunc(y, n, 1) | 1 << n]
+    def My(self, n, y):
+        return [BVtrunc(y, n, 1), BVtrunc(y, n, 1) | 1 << n]
 
-    def My(self):
-        return [lambda n, x: BVtrunc(x, n-1) << 1, lambda n, x: BVtrunc(x, n-1) << 1 | bv(1)]
+    def Mx(self, n, x):
+        return [BVtrunc(x, n-1) << 1, BVtrunc(x, n-1) << 1 | bv(1)]
 
 
 class CRZN(component):
@@ -58,13 +66,13 @@ class CRZN(component):
         d1 = Eq*delta(BVref(y, n), bv(1))
         return getSumPhase([(d0, bv(0)), (d1, BVtrunc(x, n))])
 
-    def Mx(self):
-        return [lambda n, y: BVtrunc(y, n-1),
-                lambda n, y: BVtrunc(y, n-1) | (bv(1) << n)]
+    def My(self, n, y):
+        return [BVtrunc(y, n-1),
+                BVtrunc(y, n-1) | (bv(1) << n)]
 
-    def My(self):
-        return [lambda n, x: BVtrunc(x, n-1),
-                lambda n, x: BVtrunc(x, n-1) | (bv(1) << n)]
+    def Mx(self, n, x):
+        return [BVtrunc(x, n-1),
+                BVtrunc(x, n-1) | (bv(1) << n)]
 
 
 
@@ -75,13 +83,13 @@ class H0(component):
         d1 = Eq*delta(BVref(y, 0), bv(1))
         return getSumPhase([(d0, bv(0)), (d1, BVref(x, 0))])
 
-    def Mx(self):
-        return [lambda n, y: BVtrunc(y, n, 1) | bv(0),
-                lambda n, y: BVtrunc(y, n, 1) | bv(1)]
+    def My(self, n, y):
+        return [BVtrunc(y, n, 1) | bv(0),
+                BVtrunc(y, n, 1) | bv(1)]
 
-    def My(self):
-        return [lambda n, x: BVtrunc(x, n, 1) | bv(0),
-                lambda n, x: BVtrunc(x, n, 1) | bv(1)]
+    def Mx(self, n, x):
+        return [BVtrunc(x, n, 1) | bv(0),
+                BVtrunc(x, n, 1) | bv(1)]
 
 
 class HN(component):
@@ -91,13 +99,13 @@ class HN(component):
         d1 = Eq*delta(BVref(y, n), bv(1))
         return sumPhase([phase(d0, bv(0)), phase(d1, BVref(x, n))])
 
-    def Mx(self):
-        return [lambda n, y: BVtrunc(y, n-1) | bv(0) << n,
-                lambda n, y: BVtrunc(y, n-1) | bv(1) << n]
+    def My(self, n ,y):
+        return [BVtrunc(y, n-1) | bv(0) << n,
+                BVtrunc(y, n-1) | bv(1) << n]
 
-    def My(self):
-        return [lambda n, x: BVtrunc(x, n-1) | bv(0) << n,
-                lambda n, x: BVtrunc(x, n-1) | bv(1) << n]
+    def Mx(self,n,x):
+        return [BVtrunc(x, n-1) | bv(0) << n,
+                BVtrunc(x, n-1) | bv(1) << n]
 
 class CNOT(component):
     def alpha(self, n, x, y):
@@ -105,13 +113,13 @@ class CNOT(component):
         d0 = Eq*delta(BVref(y, n), BVref(y,n-1) ^ BVref(x,n))
         return sumPhase([phase(d0, bv(0))])
 
-    def Mx(self):
-        return [lambda n, y: BVtrunc(y, n-1) | bv(0) << n,
-                lambda n, y: BVtrunc(y, n-1) | bv(1) << n]
+    def Mx(self, n, x):
+        return [BVtrunc(x, n-1) | bv(0) << n,
+                BVtrunc(x, n-1) | bv(1) << n]
 
-    def My(self):
-        return [lambda n, x: BVtrunc(x, n-1) | bv(0) << n,
-                lambda n, x: BVtrunc(x, n-1) | bv(1) << n]
+    def My(self, n ,y):
+        return [BVtrunc(y, n-1) | bv(0) << n,
+                BVtrunc(y, n-1) | bv(1) << n]
 
 class nparH(component):
     def alpha(self, n, x, y):
@@ -127,7 +135,7 @@ class DeuJozsaOracle(component):
         Eqoracle = delta(BVref(y,0), BVref(x,0) ^ oracleFunc(BVtrunc(x,n,1)))
         return getSumPhase([(Eqtrivial*Eqoracle, bv(0))])
     
-    def Mx(self):
+    def Mx(self, n, x):
         return [lambda n,y: BVref(y,0)^oracleFunc(BVtrunc(y,n,1)) | (BVtrunc(y,n,1)<<1)]
     def My(self):
         return [lambda n,x: BVref(x,0)^oracleFunc(BVtrunc(x,n,1)) | (BVtrunc(x,n,1)<<1)]
@@ -142,11 +150,11 @@ class MAJN(component):
     def alpha(self, n, x, y):
         return oneBitAdder(x, y, n/2, n, 0)
 
-    def Mx(self):
-        return [lambda n, y: BVtrunc(y, n-1, 1)<<1 | bv(1), lambda n, y: BVtrunc(y, n-1, 1)<<1, lambda n, y: BVtrunc(y, n-1, 1)<<1 | bv(1) << n, lambda n, y: BVtrunc(y, n-1, 1)<<1 | (bv(1) | bv(1) << n)]
+    def Mx(self, n, x):
+        return [BVtrunc(x, n-1, 1)<<1 | bv(1), BVtrunc(x, n-1, 1)<<1, BVtrunc(x, n-1, 1)<<1 | bv(1) << n, BVtrunc(x, n-1, 1)<<1 | (bv(1) | bv(1) << n)]
 
-    def My(self):
-        return [lambda n, y: BVtrunc(y, n-1, 1)<<1 | bv(1), lambda n, y: BVtrunc(y, n-1, 1)<<1, lambda n, y: BVtrunc(y, n-1, 1)<<1 | bv(1) << n, lambda n, y: BVtrunc(y, n-1, 1)<<1 | (bv(1) | bv(1) << n)]
+    def My(self, n, y):
+        return [BVtrunc(y, n-1, 1)<<1 | bv(1),BVtrunc(y, n-1, 1)<<1, BVtrunc(y, n-1, 1)<<1 | bv(1) << n, BVtrunc(y, n-1, 1)<<1 | (bv(1) | bv(1) << n)]
 
 class rippleAdder(component):
     def alpha(self, n, x, y):
@@ -155,39 +163,75 @@ class rippleAdder(component):
         Eq3 = delta(BVref(y,0), BVref(BVref(x, n) + BVref(x, 2*n) + BVref(x, 0), 1))
         return getSumPhase([(Eq1*Eq2*Eq3, bv(0))])
 
-    def Mx(self):
-        return [lambda n, y: BVtrunc(y, 3*n-1, 1)<<1 | bv(1), lambda n, y: BVtrunc(y, 3*n-1, 1)<<1, lambda n, y: BVtrunc(y, 3*n-1, 1)<<1 | bv(1) << (3*n), lambda n, y: BVtrunc(y, 3*n-1, 1)<<1 | (bv(1) | bv(1) << (3*n))]
+    def Mx(self, n, x):
+        return [BVtrunc(x, 3*n-1, 1)<<1 | bv(1), BVtrunc(x, 3*n-1, 1)<<1, BVtrunc(x, 3*n-1, 1)<<1 | bv(1) << (3*n), BVtrunc(x, 3*n-1, 1)<<1 | (bv(1) | bv(1) << (3*n))]
 
-    def My(self):
-        return [lambda n, y: BVtrunc(y, 3*n-1, 1)<<1 | bv(1), lambda n, y: BVtrunc(y, 3*n-1, 1)<<1, lambda n, y: BVtrunc(y, 3*n-1, 1)<<1 | bv(1) << (3*n), lambda n, y: BVtrunc(y, 3*n-1, 1)<<1 | (bv(1) | bv(1) << (3*n))]
+    def My(self, n,y):
+        return [BVtrunc(y, 3*n-1, 1)<<1 | bv(1), BVtrunc(y, 3*n-1, 1)<<1, BVtrunc(y, 3*n-1, 1)<<1 | bv(1) << (3*n), BVtrunc(y, 3*n-1, 1)<<1 | (bv(1) | bv(1) << (3*n))]
 
 class Ident(component):
     def alpha(self, n, x, y):
         Eq = delta(x, y)
         return getSumPhase([(Eq, bv(0))])
 
-    def Mx(self):
-        return [lambda n,z : z]
+    def Mx(self, n,z):
+        return [z]
 
-    def My(self):
-        return [lambda n,z : z]
+    def My(self, n,z):
+        return [z]
 
-if __name__ == '__main__':
-    a = nparH('nparH')
-    b = DeuJozsaOracle('Uo')
-    f = b.Mx()[0]
+def setbit(x, qubits):
+    allset = allsubset(qubits)
+    result = []
+    for item in allset:
+        xtmp = mask(x, qubits)
+        for i in item:
+            xtmp = xtmp | (bv(1)<<i)
+        result.append(xtmp)
+    return result    
+
+def maj(n,x,y,a,b,c):
+    Eq1 = delta(mask(x, [a, b, c]), mask(y, [a, b, c]))
+    Eq2 = delta(BVref(y,a), BVref(x, b)^BVref(x, a))
+    Eq3 = delta(BVref(y,c), BVref(x, c)^BVref(x, b))
+    Eq4 = delta(BVref(y,b), (BVref(x,b)*BVref(x, c)) ^ (BVref(x,b)* BVref(x,a)) ^ (BVref(x,a)*BVref(x, c)))
+    return getSumPhase([(Eq1*Eq2*Eq3*Eq4, bv(0))])
+
+def uma(n,x,y,a,b,c):
+    Eq1 = delta(mask(x, [a, b, c]), mask(y, [a, b, c]))
+    Eq2 = delta(BVref(y,a), BVref(x, a)^BVref(y,b))
+    Eq3 = delta(BVref(y,c), BVref(x, c)^BVref(y,a))
+    Eq4 = delta(BVref(y,b), BVref(x,b)^ (BVref(x,a)*BVref(x, c)))
+    return getSumPhase([(Eq1*Eq2*Eq3*Eq4, bv(0))])    
+
+class MAJ(component):
+    def alpha(self, n, x, y):
+        return maj(n,x,y,0,1,n+1)
+
+
+    def Mx(self,n,x):
+        qubits = {0,1,n+1}
+        return setbit(x, qubits)
     
-    n,x,y = BitVecs('n x y', MAXL)
-    terms = rightMultiAlpha(b, lambda n,x,y: a.alpha(n,x,y),n,bv(1),y)
-    solve(b.alpha(n,x,y).deltas()==1)
-    simplify(terms[0].z3exp())
-    z3term = sum([term.deltas() for term in terms])
-    s=Solver()
-    s.add(ForAll([n,y,Uo], z3term == If(BVref(y,0)^ oracleFunc(BVtrunc(y,n,1))==0, bv(1),bv(-1))))
-    print(s.check())
+    def My(self,n,y):
+        return self.Mx(n,y)
+
+class UMA(component):
+    def alpha(self, n, x, y):
+        return uma(n,x,y,0,1,n+1)
+
+    def Mx(self,n,x):
+        qubits = {0,1,n+1}
+        return setbit(x, qubits)
+    
+    def My(self,n,y):
+        return self.Mx(n,y)
 
 database = [Ident('I'),H0("H", ['0']), HN("H", ['n']), CRZN("C_RZN", ['n']), move1("move 1"),  MAJN("OneBitAdd n-1 n 0 ; SWAP n-1 n/2"), CNOT('CNOT', ['n-1', 'n']), rippleAdder("SJ")]
 
+
+if __name__ == "__main__":
+    print(allsubset({1,2,3}))
 '''     
 print("Examples: list[0] = alpha(n,x,y)")
 exStr = [strEx(i) for i in examples]

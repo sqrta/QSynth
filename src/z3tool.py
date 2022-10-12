@@ -1,5 +1,5 @@
 
-from unittest import result
+from functools import reduce
 from z3 import *
 
 MAXL = 16
@@ -18,7 +18,11 @@ def BVtrunc(vec, upper, lower=0, length = MAXL):
     BVtrunc(01101, 2, 1) = 00010 (01 "10" 1)
     BVtrunc(01101, 3, 2) = 00011 (0 "11" 01)
     '''
-    correctr = LShR((vec << (length - upper - 1)), (length - upper - 1 + lower))
+    try:
+        correctr = LShR((vec << (length - upper - 1)), (length - upper - 1 + lower))
+    except:
+        print(vec, length, upper, lower)
+        exit(0)
     return (If(upper>= lower, correctr, bv(0,length)))
 
 def BVReductAnd(vec,n):
@@ -43,6 +47,9 @@ def OracleRef(vector, index, length = ORACLEL):
 def delta(a, b):
     return If(a == b, BitVecVal(1, MAXL), BitVecVal(0, MAXL))
 
+def bvalue(term):
+    return If(term, BitVecVal(1, MAXL), BitVecVal(0, MAXL))
+
 def ndelta(a, b):
     return If(a != b, BitVecVal(1, MAXL), BitVecVal(0, MAXL))
 
@@ -52,7 +59,11 @@ def BVsum(f,n,init=0):
     return bvSum
 
 def bv(a, length = MAXL):
-    return BitVecVal(a, length)
+    try:
+        return BitVecVal(a, length)
+    except:
+        print(a, length)
+        exit(0)
 
 def reverse(vec, n=MAXL-1):
     b= vec
@@ -87,6 +98,9 @@ def bvprint(model, a, msg=""):
         tmp = result.as_binary_string()
         print(tmp, len(tmp), msg)
 
+def mask(x, numlist):
+    vec = reduce(lambda a,b : a | b, [bv(1)<<i for i in numlist])
+    return x& (~vec)
 
 def count(vector,length):
     counter = 0
@@ -108,4 +122,4 @@ if __name__ == '__main__':
     x,y = BitVecs('x y', MAXL)
     one = RepeatBitVec(MAXL, BitVecVal(1, 1)) 
     print(BVRedAnd(one))
-    solve(And(andSum(x,y) == bv(1),x<10,y<10, x>0,y>0))
+    solve(y==0b1110, mask(x,[1,3])==mask(y, [1,3]))

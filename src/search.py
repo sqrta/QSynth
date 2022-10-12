@@ -1,3 +1,4 @@
+from symbol import yield_stmt
 from z3 import *
 from adt import phase, sumPhase, sumPhaseMulti
 from component import *
@@ -5,7 +6,7 @@ from z3tool import *
 import time
 
 
-def basek(foo, intk, n, x, y, size=lambda x : x):
+def basek(foo, intk, n, x, y, size=lambda x: x):
     if intk < 0:
         return None
     k = bv(intk)
@@ -15,40 +16,59 @@ def basek(foo, intk, n, x, y, size=lambda x : x):
     sumph = foo(k, xk, yk)
     return sumPhase([phase(p[0], p[1]) for p in sumph])
 
-def inductk(foo, k, n, x, y,move=0, size = lambda x : x):
+
+def inductk(foo, k, n, x, y, move=0, size=lambda x: x):
     if k < 0:
         return None
     if k == 0:
         return sumPhase([phase(p[0], p[1]) for p in foo(n, x, y)])
     indsumph = None
-    if k==1:
-        xk = BVtrunc(x, n-k)<<move
-        yk = BVtrunc(y, n-k)<<move
+    if k == 1:
+        xk = BVtrunc(x, n-k) << move
+        yk = BVtrunc(y, n-k) << move
         sumph = foo(n-k, xk, yk)
         truncEq = 1
-        if move<k:
-            truncEq*=delta(BVtrunc(x, n, n-k+1+move), BVtrunc(y, n, n-k+1+move))
-        if move>0:
-            truncEq *= delta(BVtrunc(x,move-1,0), BVtrunc(y,move-1,0))
+        if move < k:
+            truncEq *= delta(BVtrunc(x, n, n-k+1+move),
+                             BVtrunc(y, n, n-k+1+move))
+        if move > 0:
+            truncEq *= delta(BVtrunc(x, move-1, 0), BVtrunc(y, move-1, 0))
         indsumph = [phase(truncEq*p[0], p[1] << k) for p in sumph]
-        
-    elif k==2:
-        x1 = BVtrunc(x, n/2-1)
-        x2 = BVtrunc(x, n-1, n/2+1)<<(n/2)
+
+    elif k == 2:
+        if move == 'n':
+            x1 = BVtrunc(x,n,1)
+            x2 = BVtrunc(x, 2*n, n+2) <<n
+            y1 = BVtrunc(y,n,1)
+            y2 = BVtrunc(y, 2*n, n+2) <<n
+            truncEq = delta(BVref(x, 0), BVref(y, 0)) * \
+                delta(BVref(x, n+1), BVref(y, n+1))  
+        else:
+            x1 = BVtrunc(x, n-1)
+            x2 = BVtrunc(x, 2*n-1, n+1) << n          
+            y1 = BVtrunc(y, n-1)
+            y2 = BVtrunc(y, 2*n-1, n+1) << n
+            truncEq = delta(BVref(x, n), BVref(y, n)) * \
+                delta(BVref(x, 2*n), BVref(y, 2*n))            
         xk = x1 | x2
-        y1 = BVtrunc(y, n/2-1)
-        y2 = BVtrunc(y, n-1, n/2+1)<<(n/2)
         yk = y1 | y2
-        sumph = foo(n-k, xk, yk)
-        truncEq = delta(BVref(x,n), BVref(y,n))* delta(BVref(x,n/2),BVref(y,n/2))
+        if move == 'n':
+            sumph = foo(n-1, xk, yk)
+        else:
+            sumph = foo(n-k, xk, yk)
+
         indsumph = [phase(truncEq*p[0], p[1] << k) for p in sumph]
-    elif k==3:
-        xk = BVtrunc(x, n-1) | (BVtrunc(x, 2*n-1, n+1)<<n) | (BVtrunc(x, 3*n-1, 2*n+1) << (2*n-1))
-        yk = BVtrunc(y, n-1) | (BVtrunc(y, 2*n-1, n+1)<<n) | (BVtrunc(y, 3*n-1, 2*n+1) << (2*n-1))
+    elif k == 3:
+        xk = BVtrunc(x, n-1) | (BVtrunc(x, 2*n-1, n+1) <<
+                                n) | (BVtrunc(x, 3*n-1, 2*n+1) << (2*n-1))
+        yk = BVtrunc(y, n-1) | (BVtrunc(y, 2*n-1, n+1) <<
+                                n) | (BVtrunc(y, 3*n-1, 2*n+1) << (2*n-1))
         sumph = foo(n-1, xk, yk)
-        truncEq = delta(BVref(x,n), BVref(y,n))* delta(BVref(x,2*n),BVref(y,2*n))* delta(BVref(x,3*n),BVref(y,3*n))
+        truncEq = delta(BVref(x, n), BVref(y, n)) * delta(BVref(x, 2*n),
+                                                          BVref(y, 2*n)) * delta(BVref(x, 3*n), BVref(y, 3*n))
         indsumph = [phase(truncEq*p[0], p[1] << k) for p in sumph]
     return sumPhase(indsumph)
+
 
 def verifyBase(compon, spec, pre, k, size):
     if k < 0:
@@ -79,35 +99,36 @@ def verifyBase(compon, spec, pre, k, size):
             bvprint(s.model(), right.deltas(), 'rightdelta')
             bvprint(s.model(), left.z3exp(), "left")
             bvprint(s.model(), right.z3exp(), "right")
-           
+
         '''
         return unsat
 
 
-def verifyInduct(compon, spec, pre,dir, k=1,move=0, size=lambda x:x):
+def verifyInduct(compon, spec, pre, dir, k=1, move=0, size=lambda x: x):
     xo, yo, n = BitVecs('x y n', MAXL)
     x = BVtrunc(xo, size(n))
     y = BVtrunc(yo, size(n))
     start = time.time()
     precondition = pre(n, x, y) if pre else True
     left = inductk(spec, 0, n, x, y).z3exp()
-    terms = []
-    if dir=='left':
-        terms = leftMultiAlpha(compon, lambda n,x,y: inductk(spec,k,n,x,y,move), n,x,y)
-    elif dir=='right':
-        terms = rightMultiAlpha(compon, lambda n,x,y: inductk(spec,k,n,x,y,move), n,x,y)
-        '''
-        for foo in compon.Mx():
-            z = foo(n, y)
-            terms.append(sumPhaseMulti(compon.alpha(n, z, y),
-                                    inductk(spec, k, n, x, z)))    '''    
+    leftcompon = compon[0]
+    rightcompon = compon[1]
+    terms = leftMultiAlpha(leftcompon, lambda n, x, y: rightMultiAlpha(
+        rightcompon, lambda n, x, y: inductk(spec, k, n, x, y, move), n, x, y), n, x, y)
+    # if dir == 'left':
+    #     terms = leftMultiAlpha(compon, lambda n, x, y: inductk(
+    #         spec, k, n, x, y, move), n, x, y)
+    # elif dir == 'right':
+    #     terms = rightMultiAlpha(compon, lambda n, x, y: inductk(
+    #         spec, k, n, x, y, move), n, x, y)
 
-    right = sum([term.z3exp() for term in terms])
-    rightDelta = sum([term.deltas() for term in terms])
+
+    right = terms.z3exp()
+    rightDelta = terms.deltas()
     leftDelta = inductk(spec, 0, n, x, y).deltas()
     s = Solver()
     ''''''
-    Claim = Implies(And(UGE(n,k), ULT(size(n), SPACE), precondition), 
+    Claim = Implies(And(UGE(n, k), ULT(n,SPACE), ULT(size(n), SPACE), precondition),
                     # And(left==right, rightDelta == leftDelta))
                     And(BVtrunc(left, size(n)) == BVtrunc(right, size(n)), rightDelta == leftDelta))
     s.add(Not(Claim))
@@ -121,22 +142,32 @@ def verifyInduct(compon, spec, pre,dir, k=1,move=0, size=lambda x:x):
     if r == unsat:
         return sat
     else:
-        '''
-        if compon.name == "SJ":
+        if dir == 'both':
             print(s.model())
             bvprint(s.model(), x, 'x')       
             bvprint(s.model(), y, "y")
-            bvprint(s.model(), left, "left")
-            bvprint(s.model(), right, "right")
+            # bvprint(s.model(), left, "left")
+            # bvprint(s.model(), right, "right")
             bvprint(s.model(), leftDelta, "leftdelta")
             bvprint(s.model(), rightDelta, "rightdelta")
+            print("left")
+            for z in leftcompon.Mx(n,x):
+                bvprint(s.model(),z, 'z')
+                bvprint(s.model(), leftcompon.alpha(n,x,z).deltas(), "zdelta")  
+            print("right")   
+            for z in rightcompon.My(n,y):
+                bvprint(s.model(),z, 'z')
+                bvprint(s.model(), rightcompon.alpha(n,z,y).deltas(), "zdelta")        
+        '''
+        if compon.name == "SJ":
 
-        
-        '''   
+
+
+        '''
         return unsat
 
 
-def showProg(base, left=None, right=None, name="foo", inductExp="-1", backend = "sqir"):
+def showProg(base, left=None, right=None, name="foo", inductExp="-1", backend="sqir"):
     if not base:
         return "No solutions"
     prog = ""
@@ -147,17 +178,17 @@ def showProg(base, left=None, right=None, name="foo", inductExp="-1", backend = 
         prog += "Fixpoint "+name + " (n : nat) : Unitary :=\n"
         prog += "\t match n with\n"
         for i in range(len(base)):
-            prog += "\t\t | " + str(i)+ " => " + sqirName(base[i]) + "\n"
-        prog +="\t\t | _ => "
+            prog += "\t\t | " + str(i) + " => " + sqirName(base[i]) + "\n"
+        prog += "\t\t | _ => "
         if left:
             prog += sqirName(left) + ";"
-        prog += name + " n" + inductExp +"; "
+        prog += name + " n" + inductExp + "; "
         if right:
-            prog +=  sqirName(right)
+            prog += sqirName(right)
         prog += "\n\t end."
     elif backend == 'qiskit':
         def qiskitName(ins):
-            nameMap = {'CNOT':"cx", "H":'h'}
+            nameMap = {'CNOT': "cx", "H": 'h'}
             gate = nameMap.get(ins.name, ins.name)
             return gate + "(" + ",".join([str(i) for i in ins.registers]) + ")"
 
@@ -166,7 +197,7 @@ def showProg(base, left=None, right=None, name="foo", inductExp="-1", backend = 
 
         prog += "def " + name + "(circ, n):\n"
         for i in range(len(base)):
-            prog+= "\tif(n==" + str(i) + "):\n"
+            prog += "\tif(n==" + str(i) + "):\n"
             prog += "\t"*2+circCall(base[i]) + "\n\t\treturn\n"
         if left:
             prog += "\tcirc." + qiskitName(left) + "\n"
@@ -175,12 +206,12 @@ def showProg(base, left=None, right=None, name="foo", inductExp="-1", backend = 
             prog += "\tcirc." + qiskitName(right) + "\n"
     elif backend == 'qsharp':
         def qsharpName(ins):
-            nameMap = {'CZ':"(Controlled Z)"}
+            nameMap = {'CZ': "(Controlled Z)"}
             gate = nameMap.get(ins.name, ins.name)
             return gate + "(" + ",".join(["q["+str(i)+"]" for i in ins.registers]) + ");"
         prog += "Operation " + name + "(q : Qubit[], n : Int) : Unit{\n"
         for i in range(len(base)):
-            prog+= "\tif (n==" + str(i) + "){\n"
+            prog += "\tif (n==" + str(i) + "){\n"
             prog += "\t"*2+qsharpName(base[i]) + "\n\t\treturn ();\n\t}\n"
         if left:
             prog += "\t" + qsharpName(left) + "\n"
@@ -191,9 +222,9 @@ def showProg(base, left=None, right=None, name="foo", inductExp="-1", backend = 
     return prog
 
 
-def search(spec, database, dir,  pre=None,base=1, k=1,move=0, size=lambda x:x):
+def search(spec, database, dir,  pre=None, base=1, k=1, move=0, size=lambda x: x):
     gb = []
-    gi = component('None')
+    gi = (component('None'), component('None'))
     start = time.time()
     for i in range(base):
         tmp = None
@@ -211,14 +242,22 @@ def search(spec, database, dir,  pre=None,base=1, k=1,move=0, size=lambda x:x):
     end = time.time()
     print("Base step uses {0}s".format(end-start))
     start = time.time()
+    if dir == 'both':
+        compon = (MAJ("MAJ"), UMA("UMA"))
+        ri = verifyInduct(compon, spec, pre, dir, k, move, size)
+        if ri==sat:
+            gi=compon
+        return gb,gi
+
     for item in database:
-        ri = verifyInduct(item, spec, pre, dir, k,move, size)
+        compon = (Ident('I'),item) if dir == "right" else (item,Ident('I'))
+        ri = verifyInduct(compon, spec, pre, dir, k, move, size)
         if ri == sat:
-            gi = item
+            gi = compon
             break
     end = time.time()
     print("Induction step uses {0}s".format(end-start))
-    return gb,gi
+    return gb, gi
 
 
 def strEx(example):
