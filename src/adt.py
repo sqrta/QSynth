@@ -83,4 +83,20 @@ class Spec:
 
     def alpha(self,n,x,y):
         raise NotImplementedError()
+
+def fredkin(n, x, y, a, b, c):
+    Eq1 = delta(mask(x, [a, b, c]), mask(y, [a, b, c]))
+    Eq2 = delta(BVref(y, a), BVref(x, b) ^ BVref(x, a))
+    Eq3 = delta(BVref(y, c), BVref(x, c) ^ BVref(x, b))
+    Eq4 = delta(BVref(y, b), (BVref(x, b)*BVref(x, c)) ^
+                (BVref(x, b) * BVref(x, a)) ^ (BVref(x, a)*BVref(x, c)))
+    return getSumPhase([(Eq1*Eq2*Eq3*Eq4, bv(0))])
+
+
+def peres(n, x, y, a, b, c):
+    Eq1 = delta(mask(x, [a, b, c]), mask(y, [a, b, c]))
+    Eq2 = delta(BVref(y, a), BVref(x, a) ^ BVref(y, b))
+    Eq3 = delta(BVref(y, c), BVref(x, c) ^ BVref(y, a))
+    Eq4 = delta(BVref(y, b), BVref(x, b) ^ (BVref(x, a)*BVref(x, c)))
+    return getSumPhase([(Eq1*Eq2*Eq3*Eq4, bv(0))])
         
