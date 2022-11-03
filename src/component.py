@@ -30,6 +30,12 @@ class component:
 
     def alpha(self, n, x, y):
         return None
+    
+    def claim(self):
+        return False
+
+    def prog(self):
+        return None
 
     def Mx(self, n, x):
         raise(self.name+" does not have Mx")
@@ -87,6 +93,12 @@ class CRZN(component):
     def Mx(self, n, x):
         return [BVtrunc(x, n-1),
                 BVtrunc(x, n-1) | (bv(1) << n)]
+
+    def claim(self):
+        return True
+
+    def prog(self):
+        return ISQIR({'base':[HN('h', ['N'])], 'inductive':[Ident('I'),CRZ0N('cp', ['pi/2**n', 'N-n', 'n'])]}, 'Zn')
 
 
 class Swap(component):

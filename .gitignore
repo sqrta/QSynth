@@ -1,3 +1,7 @@
 src/__pycache__/
 try
 *.py
+src/RippleAdder.py
+src/FullAdder.py
+src/RippleAdder.py
+src/GHZ.py

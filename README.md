@@ -11,4 +11,4 @@ run the command below
 ```
 python src/main.py
 ```
-Four result program files, `FullAdder.py`, `GHZ.py`, `RippleAdder.py` and `QFT.py` will be synthesized. They are Qiskit function that can generate the corresponding circuits.
+Four result program files, `FullAdder.py`, `GHZ.py`, `RippleAdder.py` and `QFT.py` will be synthesized. They are Qiskit functions that can generate the corresponding circuits.

@@ -196,78 +196,6 @@ def inductcase(spec, database, dir,  pre=None, base=1, k=1):
     return gi
     # print("Induction step uses {0}s".format(end-start))
 
-def showProg(base, gi, name="foo", inductExp=1, backend="sqir"):
-    if not base:
-        return "No solutions"
-    left,right = gi
-    prog = ""
-    if backend == 'sqir':
-        def sqirName(ins):
-            return ins.name + " " + " ".join([str(i) for i in ins.registers])
-
-        prog += "Fixpoint "+name + " (n : nat) : Unitary :=\n"
-        prog += "\t match n with\n"
-        for i in range(len(base)):
-            prog += "\t\t | " + str(i) + " => " + sqirName(base[i]) + "\n"
-        prog += "\t\t | _ => "
-        if left:
-            prog += sqirName(left) + ";"
-        prog += name + " n-1;"
-        if right:
-            prog += sqirName(right)
-        prog += "\n\t end."
-    elif backend == 'qiskit':
-        prog = qiskitbackend(base,left,right, name, inductExp)
-    elif backend == 'qsharp':
-        def qsharpName(ins):
-            nameMap = {'CZ': "(Controlled Z)"}
-            gate = nameMap.get(ins.name, ins.name)
-            return gate + "(" + ",".join(["q["+str(i)+"]" for i in ins.registers]) + ");"
-        prog += "Operation " + name + "(q : Qubit[], n : Int) : Unit{\n"
-        for i in range(len(base)):
-            prog += "\tif (n==" + str(i) + "){\n"
-            prog += "\t"*2+qsharpName(base[i]) + "\n\t\treturn ();\n\t}\n"
-        if left:
-            prog += "\t" + qsharpName(left) + "\n"
-        prog += "\t" + name + "(q,n-1);\n"
-        if right:
-            prog += "\t" + qsharpName(right) + "\n"
-        prog += "}"
-    return prog
-
-def qiskitbackend(base, left=None, right=None, name="foo", spec=1):
-    prog = ""
-    def qiskitName(ins):
-        nameMap = {'CNOT': "cx", "H": 'h'}
-        gate = ins.qiskitName()
-        return gate + "(" + ",".join([str(i) for i in ins.registers]) + ")"
-
-    def circCall(ins, circ="circ"):
-        return circ+"." + qiskitName(ins)
-
-    def gatelist(gates,tabnum, circ="circ"):
-        instructions = gates
-        if not isinstance(gates, list):
-            instructions = [gates]
-        ops = [circCall(gate, circ) for gate in instructions]
-        return ntab(tabnum)+ f"\n{ntab(tabnum)}".join(ops) + "\n"
-
-    prog += "def " + name + "(N):\n"
-    size = "N+1" if spec==1 else f"{spec}*N+1"
-    prog+=f"\tcircuit=QuantumCircuit({size})\n"     
-    prog += "\tdef S(circ, n):\n"   
-    for i in range(len(base)):       
-        prog += "\t\tif(n==" + str(i) + "):\n"
-        prog += gatelist(base[i], 3)
-    prog += f"\t\telse:\n"
-    if left:
-        prog += gatelist(left.decompose(), 3)
-    prog += f"{ntab(3)}S(circ,n-1)\n"
-    if right:
-        prog += gatelist(right.decompose(), 3)
-    prog+="\tS(circuit,N)\n\treturn circuit"
-    return prog
-
 def success(gb,gi):
     for gate in gb:
         if gate.name == 'None':
@@ -282,20 +210,9 @@ def synthesis(spec, database,  pre=None):
         for depth in range(1,4):
             gb,gi = search(spec,database, dir, pre, k=depth)
             if success(gb,gi):
-                return gb,gi
-    return None,None
-
-def ntab(n):
-    return "\t"*n
-
-def strEx(example):
-    def binw(n):
-        return '{:0{width}b}'.format(n, width=example[1]+1)
-    return ("exp(2pi*j*0."+binw(example[0]) + ')', "n="+str(example[1]+1), "x="+binw(example[2]), "y="+binw(example[3]))
-
-def reverseb(n, width):
-    b = '{:0{width}b}'.format(n, width=width)
-    return int(b[::-1], 2)
+                return ISQIR({'base':gb, 'inductive':gi})
+                
+    return ISQIR({'base':None, 'inductive':None})
 
 
 def QFTex(k):
