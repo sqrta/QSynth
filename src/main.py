@@ -40,25 +40,29 @@ if __name__ == "__main__":
     database = [Ident('I'), H0("H", ['0']), CRZN("C_RZN", ['n']), CNOT('CNOT', [0,1]), Toffoli('ccx', [0,1,2]),  Swap('swap', [0,1]), X('x', [0])]
 
     start = time.time()
-    prog = synthesis(rippleAdderSpec, database, pre=lambda n,x,y : BVref(x,0)==0)
+    spec = Specification(beta=lambda n,x,y: 1, phaseSum=rippleAdderSpec)
+    prog = synthesis(spec, database, pre=lambda n,x,y : BVref(x,0)==0)
     end =time.time()
     print(f'RippleAdder case uses {end-start}s')
     filewrite(prog.toQiskit('RippleAdder'), 'RippleAdder.py')
 
     start = time.time()
-    prog = synthesis(GHZspec, database, pre = lambda n,x,y : x==bv(0))
+    spec = Specification(beta=lambda n,x,y: 2, phaseSum=GHZspec)
+    prog = synthesis(spec, database, pre = lambda n,x,y : x==bv(0))
     end =time.time()
     print(f'GHZ case uses {end-start}s')
     filewrite(prog.toQiskit('GHZ'), 'GHZ.py')
 
     start = time.time()
-    prog = synthesis(FullAdderSpec, database, pre= lambda n,x,y : And(BVref(x,0)==0, ULT(x, bv(1)<<2*n+1)))
+    spec = Specification(beta=lambda n,x,y: 1, phaseSum=FullAdderSpec)
+    prog = synthesis(spec, database, pre= lambda n,x,y : And(BVref(x,0)==0, ULT(x, bv(1)<<2*n+1)))
     end =time.time()
     print(f'FullAdder case uses {end-start}s')
     filewrite(prog.toQiskit('FullAdder'), 'FullAdder.py')
 
     start = time.time()
-    prog = synthesis(QFTspec, database, pre = lambda n,x,y : And(ULT(x,(bv(2)<<n)), ULT(y, (bv(2)<<n))))
+    spec = Specification(beta=lambda n,x,y: 2<<n, phaseSum=QFTspec)
+    prog = synthesis(spec, database, pre = lambda n,x,y : And(ULT(x,(bv(2)<<n)), ULT(y, (bv(2)<<n))))
     end =time.time()
     print(f'QFT case uses {end-start}s')
     filewrite(prog.toQiskit('QFT'), 'QFT.py')

@@ -271,10 +271,10 @@ def C_RZN(t, x, y, n, m):
 def C_RZ(y, t, n, m):
     return delta(BVref(y, t), 1)*(BVref(y, t-n) << (m-n-1))
 
-def search(spec, database, dir,  pre=None, base=1, k=1):
+def search(specification, database, dir,  pre=None, base=1, k=1):
     size = lambda x: k*x
     gb = []
-    
+    spec = specification.phaseSum
     start = time.time()
     for i in range(base):
         tmp = None
