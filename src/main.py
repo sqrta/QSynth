@@ -8,25 +8,25 @@ def QFTspec(n, x, y):
     return [(bv(1), BVtrunc(u, n))]
 
 def FullAdderSpec(n,x,y):
-    Eq1 = delta(BVtrunc(x, 2*n, 1), BVtrunc(y, 2*n, 1))
+    Eq1 = Equal(BVtrunc(x, 2*n, 1), BVtrunc(y, 2*n, 1))
     addone = BVtrunc(x, n, 1) + BVtrunc(x,2*n,n+1) + BVref(x,0)
     result = BVtrunc(y, 3*n, 2*n + 1) | BVref(y,0)<<n
-    Eq2 = delta(BVtrunc(addone, n),  BVtrunc(result, n))
+    Eq2 = Equal(BVtrunc(addone, n),  BVtrunc(result, n))
     return [(Eq1*Eq2, bv(0))]
 
 
 def GHZspec(n, x, y):
-    Eq = delta(BVtrunc(y,n), bv(0)) | delta(BVtrunc(y,n), (bv(1)<<(n+1)) -1)
+    Eq = Equal(BVtrunc(y,n), bv(0)) | Equal(BVtrunc(y,n), (bv(1)<<(n+1)) -1)
     return [(Eq, bv(0))]
 
 def IDspec(n,x,y):
-    return [(delta(x,y), bv(0))]
+    return [(Equal(x,y), bv(0))]
 
 def rippleAdderSpec(n,x,y):
-    Eq1 = delta(BVtrunc(x, n), BVtrunc(y, n))
+    Eq1 = Equal(BVtrunc(x, n), BVtrunc(y, n))
     add = BVtrunc(x, n, 1) + BVtrunc(x,2*n,n+1) + BVref(x,0)
     result = BVtrunc(y, 2*n, n + 1)
-    Eq2 = delta(BVtrunc(add, n),  BVtrunc(result, n))
+    Eq2 = Equal(BVtrunc(add, n),  BVtrunc(result, n))
     return [(Eq1*Eq2, bv(0))]
 
 def filewrite(string, path):

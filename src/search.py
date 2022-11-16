@@ -29,10 +29,10 @@ def inductk(foo, k, n, x, y, move=0, size=lambda x: x):
         sumph = foo(n-k, xk, yk)
         truncEq = 1
         if move < k:
-            truncEq *= delta(BVtrunc(x, n, n-k+1+move),
+            truncEq *= Equal(BVtrunc(x, n, n-k+1+move),
                              BVtrunc(y, n, n-k+1+move))
         if move > 0:
-            truncEq *= delta(BVtrunc(x, move-1, 0), BVtrunc(y, move-1, 0))
+            truncEq *= Equal(BVtrunc(x, move-1, 0), BVtrunc(y, move-1, 0))
         indsumph = [phase(truncEq*p[0], p[1] << k) for p in sumph]
 
     elif k == 2:
@@ -41,15 +41,15 @@ def inductk(foo, k, n, x, y, move=0, size=lambda x: x):
         x2 = BVtrunc(x, 2*n, n+2) <<n
         y1 = BVtrunc(y,n,1)
         y2 = BVtrunc(y, 2*n, n+2) <<n
-        truncEq = delta(BVref(x, 0), BVref(y, 0)) * \
-            delta(BVref(x, n+1), BVref(y, n+1))  
+        truncEq = Equal(BVref(x, 0), BVref(y, 0)) * \
+            Equal(BVref(x, n+1), BVref(y, n+1))  
         # else:
         #     x1 = BVtrunc(x, n-1)
         #     x2 = BVtrunc(x, 2*n-1, n+1) << n          
         #     y1 = BVtrunc(y, n-1)
         #     y2 = BVtrunc(y, 2*n-1, n+1) << n
-        #     truncEq = delta(BVref(x, n), BVref(y, n)) * \
-        #         delta(BVref(x, 2*n), BVref(y, 2*n))            
+        #     truncEq = Equal(BVref(x, n), BVref(y, n)) * \
+        #         Equal(BVref(x, 2*n), BVref(y, 2*n))            
         xk = x1 | x2
         yk = y1 | y2
         # if move == 'n':
@@ -64,8 +64,8 @@ def inductk(foo, k, n, x, y, move=0, size=lambda x: x):
         yk = BVtrunc(y, n-1) | (BVtrunc(y, 2*n-1, n+1) <<
                                 n) | (BVtrunc(y, 3*n-1, 2*n+1) << (2*n-1))
         sumph = foo(n-1, xk, yk)
-        truncEq = delta(BVref(x, n), BVref(y, n)) * delta(BVref(x, 2*n),
-                                                          BVref(y, 2*n)) * delta(BVref(x, 3*n), BVref(y, 3*n))
+        truncEq = Equal(BVref(x, n), BVref(y, n)) * Equal(BVref(x, 2*n),
+                                                          BVref(y, 2*n)) * Equal(BVref(x, 3*n), BVref(y, 3*n))
         indsumph = [phase(truncEq*p[0], p[1] << k) for p in sumph]
     return sumPhase(indsumph)
 
@@ -252,24 +252,24 @@ def getpre(n, x, y):
     return Or(pre)
 
 def Hnspec(n, x, y):
-    Eq = delta(BVtrunc(x,n-1), BVtrunc(y,n-1))
+    Eq = Equal(BVtrunc(x,n-1), BVtrunc(y,n-1))
     result = BVref(x,n) & BVref(y,n)
     return [(Eq, result << n)]
 
 def Adderspec(n, x, y):
-    Eq1 = delta(BVtrunc(x, n/2, 1), BVtrunc(y, n/2, 1))
+    Eq1 = Equal(BVtrunc(x, n/2, 1), BVtrunc(y, n/2, 1))
     addone = BVtrunc(x, n/2, 1) + BVtrunc(x,n,n/2+1) + BVref(x,0)
     result = BVtrunc(y,n, n/2 + 1) | BVref(y,0)<<(n/2)
-    Eq2 = delta(BVtrunc(addone, n/2),  BVtrunc(result, n/2))
+    Eq2 = Equal(BVtrunc(addone, n/2),  BVtrunc(result, n/2))
     return [(Eq1*Eq2, bv(0))]
 
 def C_RZN(t, x, y, n, m):
-    truncEq = delta(BVtrunc(x, t-1), BVtrunc(y, t-1))
-    cond = truncEq * delta(BVref(y, t), 1) * (BVtrunc(x, t, t-n) << (m-n-1))
+    truncEq = Equal(BVtrunc(x, t-1), BVtrunc(y, t-1))
+    cond = truncEq * Equal(BVref(y, t), 1) * (BVtrunc(x, t, t-n) << (m-n-1))
     return cond
 
 def C_RZ(y, t, n, m):
-    return delta(BVref(y, t), 1)*(BVref(y, t-n) << (m-n-1))
+    return Equal(BVref(y, t), 1)*(BVref(y, t-n) << (m-n-1))
 
 def search(specification, database, dir,  pre=None, base=1, k=1):
     size = lambda x: k*x

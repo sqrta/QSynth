@@ -44,13 +44,13 @@ def OracleRef(vector, index, length = ORACLEL):
     newIndex = ZeroExt(length - MAXL,index)
     return BVref(vector, newIndex, length)
 
-def delta(a, b):
+def Equal(a, b):
     return If(a == b, BitVecVal(1, MAXL), BitVecVal(0, MAXL))
 
 def bvalue(term):
     return If(term, BitVecVal(1, MAXL), BitVecVal(0, MAXL))
 
-def ndelta(a, b):
+def nEqual(a, b):
     return If(a != b, BitVecVal(1, MAXL), BitVecVal(0, MAXL))
 
 def BVsum(f,n,init=0):

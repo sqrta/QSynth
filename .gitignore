@@ -5,4 +5,4 @@ src/RippleAdder.py
 src/FullAdder.py
 src/RippleAdder.py
 src/GHZ.py
-document/*
+document/oracle*

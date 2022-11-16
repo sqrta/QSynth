@@ -52,7 +52,7 @@ class component:
 
 class CRZ0N(component):
     def alpha(self, n, x, y):
-        Eq = delta(BVtrunc(x, n), BVtrunc(y, n))
+        Eq = Equal(BVtrunc(x, n), BVtrunc(y, n))
         return sumPhase([phase(Eq, BVref(x, 0))])
 
     def My(self, n, y):
@@ -68,8 +68,8 @@ def decompose(gate):
 
 class move1(component):
     def alpha(self, n, x, y):
-        Eq = delta(BVtrunc(x, n-1), BVtrunc(y, n, 1)) * \
-            delta(BVref(y, 0), bv(0))
+        Eq = Equal(BVtrunc(x, n-1), BVtrunc(y, n, 1)) * \
+            Equal(BVref(y, 0), bv(0))
         return getSumPhase([(Eq, bv(0))])
 
     def My(self, n, y):
@@ -81,9 +81,9 @@ class move1(component):
 
 class CRZN(component):
     def alpha(self, n, x, y):
-        Eq = delta(BVtrunc(x, n-1), BVtrunc(y, n-1))
-        d0 = Eq*delta(BVref(y, n), bv(0))
-        d1 = Eq*delta(BVref(y, n), bv(1))
+        Eq = Equal(BVtrunc(x, n-1), BVtrunc(y, n-1))
+        d0 = Eq*Equal(BVref(y, n), bv(0))
+        d1 = Eq*Equal(BVref(y, n), bv(1))
         return getSumPhase([(d0, bv(0)), (d1, BVtrunc(x, n))])
 
     def My(self, n, y):
@@ -103,7 +103,7 @@ class CRZN(component):
 
 class Swap(component):
     def alpha(self, n, x, y):
-        Eq = delta(x, y)
+        Eq = Equal(x, y)
         return getSumPhase([(Eq, bv(0))])
 
     def Mx(self, n, z):
@@ -118,7 +118,7 @@ class Swap(component):
 
 class Toffoli(component):
     def alpha(self, n, x, y):
-        Eq = delta(x, y)
+        Eq = Equal(x, y)
         return getSumPhase([(Eq, bv(0))])
 
     def Mx(self, n, z):
@@ -133,9 +133,9 @@ class Toffoli(component):
 
 class H0(component):
     def alpha(self, n, x, y):
-        Eq = If(ULT(n, 0), delta(BVtrunc(x, n, 1), BVtrunc(y, n, 1)), bv(1))
-        d0 = Eq*delta(BVref(y, 0), bv(0))
-        d1 = Eq*delta(BVref(y, 0), bv(1))
+        Eq = If(ULT(n, 0), Equal(BVtrunc(x, n, 1), BVtrunc(y, n, 1)), bv(1))
+        d0 = Eq*Equal(BVref(y, 0), bv(0))
+        d1 = Eq*Equal(BVref(y, 0), bv(1))
         return getSumPhase([(d0, bv(0)), (d1, BVref(x, 0))])
 
     def My(self, n, y):
@@ -152,9 +152,9 @@ class H0(component):
 
 class HN(component):
     def alpha(self, n, x, y):
-        Eq = If(ULT(n, 0), delta(BVtrunc(x, n-1), BVtrunc(y, n-1)), bv(1))
-        d0 = Eq*delta(BVref(y, n), bv(0))
-        d1 = Eq*delta(BVref(y, n), bv(1))
+        Eq = If(ULT(n, 0), Equal(BVtrunc(x, n-1), BVtrunc(y, n-1)), bv(1))
+        d0 = Eq*Equal(BVref(y, n), bv(0))
+        d1 = Eq*Equal(BVref(y, n), bv(1))
         return sumPhase([phase(d0, bv(0)), phase(d1, BVref(x, n))])
 
     def My(self, n, y):
@@ -170,9 +170,9 @@ class HN(component):
 
 class X(component):
     def alpha(self, n, x, y):
-        Eq = If(ULT(n, 0), delta(BVtrunc(x, n-1), BVtrunc(y, n-1)), bv(1))
-        d0 = Eq*delta(BVref(y, n), bv(0))
-        d1 = Eq*delta(BVref(y, n), bv(1))
+        Eq = If(ULT(n, 0), Equal(BVtrunc(x, n-1), BVtrunc(y, n-1)), bv(1))
+        d0 = Eq*Equal(BVref(y, n), bv(0))
+        d1 = Eq*Equal(BVref(y, n), bv(1))
         return sumPhase([phase(d0, bv(0)), phase(d1, BVref(x, n))])
 
     def My(self, n, y):
@@ -189,8 +189,8 @@ class X(component):
 
 class CNOT(component):
     def alpha(self, n, x, y):
-        Eq = If(n >= 1, delta(BVtrunc(x, n-1), BVtrunc(y, n-1)), bv(1))
-        d0 = Eq*delta(BVref(y, n), BVref(y, n-1) ^ BVref(x, n))
+        Eq = If(n >= 1, Equal(BVtrunc(x, n-1), BVtrunc(y, n-1)), bv(1))
+        d0 = Eq*Equal(BVref(y, n), BVref(y, n-1) ^ BVref(x, n))
         return sumPhase([phase(d0, bv(0))])
 
     def Mx(self, n, x):
@@ -220,8 +220,8 @@ def oracleFunc(x, length=MAXL):
 
 class DeuJozsaOracle(component):
     def alpha(self, n, x, y):
-        Eqtrivial = delta(BVtrunc(x, n, 1), BVtrunc(y, n, 1))
-        Eqoracle = delta(BVref(y, 0), BVref(x, 0) ^
+        Eqtrivial = Equal(BVtrunc(x, n, 1), BVtrunc(y, n, 1))
+        Eqoracle = Equal(BVref(y, 0), BVref(x, 0) ^
                          oracleFunc(BVtrunc(x, n, 1)))
         return getSumPhase([(Eqtrivial*Eqoracle, bv(0))])
 
@@ -235,9 +235,9 @@ class DeuJozsaOracle(component):
 
 class Y(component):
     def alpha(self, n, x, y):
-        Eq = If(ULT(n, 0), delta(BVtrunc(x, n-1), BVtrunc(y, n-1)), bv(1))
-        d0 = Eq*delta(BVref(y, n), bv(0))
-        d1 = Eq*delta(BVref(y, n), bv(1))
+        Eq = If(ULT(n, 0), Equal(BVtrunc(x, n-1), BVtrunc(y, n-1)), bv(1))
+        d0 = Eq*Equal(BVref(y, n), bv(0))
+        d1 = Eq*Equal(BVref(y, n), bv(1))
         return sumPhase([phase(d0, bv(0)), phase(d1, BVref(x, n))])
 
     def Mx(self, n, x):
@@ -249,10 +249,10 @@ class Y(component):
 
 class CCX_N(component):
     def alpha(self, n, x, y):
-        Eq1 = delta(BVtrunc(x, 3*n-1, 1), BVtrunc(y, 3*n-1, 1))
-        Eq2 = delta(BVref(y, 3*n), BVref(BVref(x, n) +
+        Eq1 = Equal(BVtrunc(x, 3*n-1, 1), BVtrunc(y, 3*n-1, 1))
+        Eq2 = Equal(BVref(y, 3*n), BVref(BVref(x, n) +
                                          BVref(x, 2*n) + BVref(x, 0), 0))
-        Eq3 = delta(BVref(y, 0), BVref(
+        Eq3 = Equal(BVref(y, 0), BVref(
             BVref(x, n) + BVref(x, 2*n) + BVref(x, 0), 1))
         return getSumPhase([(Eq1*Eq2*Eq3, bv(0))])
 
@@ -269,7 +269,7 @@ class CCX_N(component):
 
 class Ident(component):
     def alpha(self, n, x, y):
-        Eq = delta(x, y)
+        Eq = Equal(x, y)
         return getSumPhase([(Eq, bv(0))])
 
     def Mx(self, n, z):
