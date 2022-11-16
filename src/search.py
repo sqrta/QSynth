@@ -205,10 +205,10 @@ def success(gb,gi):
             return False
     return True
 
-def synthesis(spec, database,  pre=None):
+def synthesis(amplitude, gateset,  hypothesis=lambda n,x,y:True):
     for dir in ['right','left', 'both']:
         for depth in range(1,4):
-            gb,gi = search(spec,database, dir, pre, k=depth)
+            gb,gi = search(amplitude,gateset, dir, hypothesis, k=depth)
             if success(gb,gi):
                 return ISQIR({'base':gb, 'inductive':gi})
                 

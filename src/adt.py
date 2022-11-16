@@ -206,7 +206,7 @@ class ISQIR:
                 # print('here',result)
         return result + showProg(self.gb, self.gi, name, 1, "qiskit")
 
-class Specification:
+class PPSA:
     def __init__(self, beta, phaseSum) -> None:
         self.beta = beta
         self.phaseSum = phaseSum

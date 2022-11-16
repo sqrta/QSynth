@@ -324,7 +324,7 @@ class Peres(component):
         return [Toffoli('ccnot', [0, 'N-n', '2*N-n']),  CNOT('cnot', ['2*N-n', 0]), CNOT('cnot', [0, 'N-n'])]
 
 
-
+StandardGateSet = [Ident('I'), H0("H", ['0']), CRZN("C_RZN", ['n']), CNOT('CNOT', [0,1]), Toffoli('ccx', [0,1,2]),  Swap('swap', [0,1]), X('x', [0])]
 
 
 if __name__ == "__main__":
