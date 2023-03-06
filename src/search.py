@@ -210,9 +210,9 @@ def synthesis(amplitude, gateset,  hypothesis=lambda n,x,y:True):
         for depth in range(1,4):
             gb,gi = search(amplitude,gateset, dir, hypothesis, k=depth)
             if success(gb,gi):
-                return ISQIR({'base':gb, 'inductive':gi})
+                return ISQIR({'base':gb, 'inductive':gi}, k= depth)
                 
-    return ISQIR({'base':None, 'inductive':None})
+    return ISQIR({'base':None, 'inductive':None}, k=1)
 
 
 def QFTex(k):

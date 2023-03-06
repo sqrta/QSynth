@@ -188,10 +188,11 @@ def reverseb(n, width):
     return int(b[::-1], 2)
 
 class ISQIR:
-    def __init__(self, gates,name="foo") -> None:
+    def __init__(self, gates,k, name="foo") -> None:
         self.gb = gates['base']
         self.gi = gates['inductive']
         self.name = name
+        self.k=k
 
     def toQiskit(self,name=None):
         if name == None:
@@ -204,7 +205,7 @@ class ISQIR:
             if gate.claim():
                 result += gate.prog().toQiskit()
                 # print('here',result)
-        return result + showProg(self.gb, self.gi, name, 1, "qiskit")
+        return result + showProg(self.gb, self.gi, name, self.k, "qiskit")
 
 class PPSA:
     def __init__(self, beta, phaseSum) -> None:
