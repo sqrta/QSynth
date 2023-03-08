@@ -167,6 +167,19 @@ class HN(component):
 
     def qiskitName(self):
         return "h"
+    
+class Xn(component):
+    def alpha(self, n, x, y):
+        reg = eval(str(self.registers[0]))
+        Eq = Equal(x, y ^ (bv(1)<<reg))
+        return getSumPhase([(Eq, bv(0))])
+    
+    def My(self, n, y):
+        reg = eval(str(self.registers[0]))
+        return [BVtrunc(y, n-1) ^ (bv(1) << reg)]
+
+    def Mx(self, n, x):
+        return [BVtrunc(x, n-1) ^ (bv(1) << n)]    
 
 class X(component):
     def alpha(self, n, x, y):
@@ -194,12 +207,12 @@ class CNOT(component):
         return sumPhase([phase(d0, bv(0))])
 
     def Mx(self, n, x):
-        return [BVtrunc(x, n-1) | bv(0) << n,
-                BVtrunc(x, n-1) | bv(1) << n]
+        return [BVtrunc(x, n-1),
+                BVtrunc(x, n-1) ^ (bv(1) << n)]
 
     def My(self, n, y):
-        return [BVtrunc(y, n-1) | bv(0) << n,
-                BVtrunc(y, n-1) | bv(1) << n]
+        return [BVtrunc(y, n-1),
+                BVtrunc(y, n-1) ^ (bv(1) << n)]
 
     def qiskitName(self):
         return "cx"
@@ -209,8 +222,37 @@ class CNOT(component):
 
 class Xmaj(component):
     def alpha(self, n, x, y):
-        return super().alpha(n, x, y)
+        params=[]
+        for reg in self.registers:
+            params.append(eval(str(reg)))
+        return xmaj(n, x, y, *params)
 
+    def Mx(self, n, x):
+        qubits = {0, 1, n+1}
+        return setbit(x, qubits)
+
+    def My(self, n, y):
+        return self.Mx(n, y)
+
+    def decompose(self):
+        return [X("x",['2*N-n+1']),CNOT('cnot', ['N-n+1','2*N-n+1']), CNOT('cnot', ['N-n+1', 0]), Toffoli('ccnot', [0, '2*N-n+1', 'N-n+1'])]
+    
+class Xuma(component):
+    def alpha(self, n, x, y):
+        params=[]
+        for reg in self.registers:
+            params.append(eval(str(reg)))
+        return xuma(n, x, y, *params)
+
+    def Mx(self, n, x):
+        qubits = {0, 1, n+1}
+        return setbit(x, qubits)
+
+    def My(self, n, y):
+        return self.Mx(n, y)
+
+    def decompose(self):
+        return [Toffoli('ccnot', [0, '2*N-n+1', 'N-n+1']),  CNOT('cnot', ['N-n+1', 0]), CNOT('cnot', [0, '2*N-n+1']), X("x", ['2*N-n+1'])]
 class nparH(component):
     def alpha(self, n, x, y):
         return getSumPhase([(If(andSum(x, y) == 1, bv(-1), bv(1)), bv(0))])
@@ -332,7 +374,7 @@ def setbit(x, qubits):
     for item in allset:
         xtmp = mask(x, qubits)
         for i in item:
-            xtmp = xtmp | (bv(1) << i)
+            xtmp = xtmp ^ (bv(1) << i)
         result.append(xtmp)
     return result
 

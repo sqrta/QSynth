@@ -29,13 +29,26 @@ def rippleAdderSpec(n,x,y):
     Eq2 = Equal(BVtrunc(add, n),  BVtrunc(result, n))
     return [(Eq1*Eq2, bv(0))]
 
+def rippleSubtractSpec(n,x,y):
+    Eq1 = Equal(BVtrunc(x, n, 0), BVtrunc(y, n, 0))
+    add =  BVtrunc(~x,2*n,n+1) + BVtrunc(~x, n, 1) + BVref(x,0)
+    result = BVtrunc(~y, 2*n, n + 1)
+    Eq2 = Equal(BVtrunc(add, n-1),  BVtrunc(result, n-1))
+    return [(Eq1*Eq2, bv(0))]
+
 def filewrite(string, path):
     with open(path, 'w') as f:
         f.write(string)
 
 if __name__ == "__main__":
     # base gate for synthesis
-
+    # start = time.time()
+    # spec = PPSA(beta=lambda n: 1, phaseSum=rippleSubtractSpec)
+    # prog = synthesis(spec, StandardGateSet, hypothesis =lambda n,x,y : BVref(x,0)==0)
+    # end =time.time()
+    # print(f'RippleSubtractor case uses {end-start}s')
+    # filewrite(prog.toQiskit('RippleSubtractor'), 'RippleSubtractor.py')
+    # exit(0)
     start = time.time()
     spec = PPSA(beta=lambda n: 1, phaseSum=rippleAdderSpec)
     prog = synthesis(spec, StandardGateSet, hypothesis =lambda n,x,y : BVref(x,0)==0)
