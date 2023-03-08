@@ -126,20 +126,10 @@ def verifyInduct(compon, spec, pre, dir, k=1, move=0, size=lambda x: x):
         funcs[i] = lambda n, x, y: rightMultiAlpha(item, funcs[i-1], n, x, y)
     
     lfuncs = {0:funcs[len(rightcompon)]}
-    i=1
-    lfuncs[1]= lambda n, x, y: leftMultiAlpha(leftcompon[0], lfuncs[i-1], n, x, y)
-    # item = leftcompon[i-1]
-    # lfuncs[i] = lambda n, x, y: leftMultiAlpha(item, lfuncs[i-1], n, x, y)
-    # for i in range(1,len(leftcompon)+1):
-    #     item = leftcompon[i-1]
-    #     lfuncs[i] = lambda n, x, y: leftMultiAlpha(item, lfuncs[i-1], n, x, y)
-    recall = lfuncs[len(leftcompon)]
-    terms = recall(n,x,y)
-        #tmp = recall
-    # for leftcompon in compon[0][-1::-1]:
-    #     terms = lambda n, x, y:  leftMultiAlpha(leftcompon, recall, n, x, y)
-    # terms = recall(n,x,y)
-    # terms = leftMultiAlpha(leftcompon, recall, n, x, y)
+    for i in range(1,len(leftcompon)+1):
+        comp = leftcompon[i-1]
+        lfuncs[i]= lambda n, x, y: leftMultiAlpha(comp, lfuncs[i-1], n, x, y)
+    terms = lfuncs[len(leftcompon)](n,x,y)
 
 
     right = terms.z3exp()
