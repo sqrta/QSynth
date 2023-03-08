@@ -23,7 +23,7 @@ def IDspec(n,x,y):
     return [(Equal(x,y), bv(0))]
 
 def rippleAdderSpec(n,x,y):
-    Eq1 = Equal(BVtrunc(x, n), BVtrunc(y, n))
+    Eq1 = Equal(BVtrunc(x, n, 0), BVtrunc(y, n, 0))
     add = BVtrunc(x, n, 1) + BVtrunc(x,2*n,n+1) + BVref(x,0)
     result = BVtrunc(y, 2*n, n + 1)
     Eq2 = Equal(BVtrunc(add, n),  BVtrunc(result, n))
@@ -52,14 +52,14 @@ if __name__ == "__main__":
 
     start = time.time()
     spec = PPSA(beta=lambda n: 1, phaseSum=FullAdderSpec)
-    prog = synthesis(spec, StandardGateSet, hypothesis = lambda n,x,y : And(BVref(x,0)==0, ULT(x, bv(1)<<2*n+1)))
+    prog = synthesis(spec, StandardGateSet, hypothesis = lambda n,x,y : And(BVref(x,0)==0))
     end =time.time()
     print(f'FullAdder case uses {end-start}s')
     filewrite(prog.toQiskit('FullAdder'), 'FullAdder.py')
 
     start = time.time()
     spec = PPSA(beta=lambda n: 2<<n, phaseSum=QFTspec)
-    prog = synthesis(spec, StandardGateSet, hypothesis = lambda n,x,y : And(ULT(x,(bv(2)<<n)), ULT(y, (bv(2)<<n))))
+    prog = synthesis(spec, StandardGateSet, hypothesis = lambda n,x,y : True)
     end =time.time()
     print(f'QFT case uses {end-start}s')
     filewrite(prog.toQiskit('QFT'), 'QFT.py')

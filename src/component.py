@@ -98,7 +98,7 @@ class CRZN(component):
         return True
 
     def prog(self):
-        return ISQIR({'base':[HN('h', ['N'])], 'inductive':[Ident('I'),CRZ0N('cp', ['pi/2**n', 'N-n', 'n'])]}, 'Zn')
+        return ISQIR({'base':[HN('h', ['N'])], 'inductive':([Ident('I')],[CRZ0N('cp', ['pi/2**n', 'N-n', 'n'])])}, name='Zn')
 
 
 class Swap(component):
@@ -207,6 +207,9 @@ class CNOT(component):
     def decompose(self):
         return CNOT('cnot', ['n-1', 'n'])
 
+class Xmaj(component):
+    def alpha(self, n, x, y):
+        return super().alpha(n, x, y)
 
 class nparH(component):
     def alpha(self, n, x, y):
@@ -267,6 +270,47 @@ class CCX_N(component):
                 CNOT('cnot', ['N+n', 0]), CNOT('cnot', ['n', 'N+n']), Swap('swap', [0, '2*N+n'])]
 
 
+class Fredkin(component):
+    def alpha(self, n, x, y):
+        params=[]
+        for reg in self.registers:
+            params.append(eval(str(reg)))
+        return fredkin(n, x, y, *params)
+
+    def Mx(self, n, x):
+        qubits = {0, 1, n+1}
+        return setbit(x, qubits)
+
+    def My(self, n, y):
+        return self.Mx(n, y)
+
+    def decompose(self):
+        return [CNOT('cnot', ['N-n+1','2*N-n+1']), CNOT('cnot', ['N-n+1', 0]), Toffoli('ccnot', [0, '2*N-n+1', 'N-n+1'])]
+
+
+class Peres(component):
+    def alpha(self, n, x, y):
+        params=[]
+        for reg in self.registers:
+            params.append(eval(str(reg)))
+        return peres(n, x, y, *params)
+
+    def Mx(self, n, x):
+        qubits = {0, 1, n+1}
+        return setbit(x, qubits)
+
+    def My(self, n, y):
+        return self.Mx(n, y)
+
+    def decompose(self):
+        return [Toffoli('ccnot', [0, '2*N-n+1', 'N-n+1']),  CNOT('cnot', ['N-n+1', 0]), CNOT('cnot', [0, '2*N-n+1'])]
+
+
+
+class divider(component):
+    def alpha(self, n, x, y):
+        return super().alpha(n, x, y)
+
 class Ident(component):
     def alpha(self, n, x, y):
         Eq = Equal(x, y)
@@ -292,39 +336,7 @@ def setbit(x, qubits):
         result.append(xtmp)
     return result
 
-
-
-class Fredkin(component):
-    def alpha(self, n, x, y):
-        return fredkin(n, x, y, 0, 1, n+1)
-
-    def Mx(self, n, x):
-        qubits = {0, 1, n+1}
-        return setbit(x, qubits)
-
-    def My(self, n, y):
-        return self.Mx(n, y)
-
-    def decompose(self):
-        return [CNOT('cnot', ['2*N-n', 'N-n']), CNOT('cnot', ['2*N-n', 0]), Toffoli('ccnot', [0, 'N-n', '2*N-n'])]
-
-
-class Peres(component):
-    def alpha(self, n, x, y):
-        return peres(n, x, y, 0, 1, n+1)
-
-    def Mx(self, n, x):
-        qubits = {0, 1, n+1}
-        return setbit(x, qubits)
-
-    def My(self, n, y):
-        return self.Mx(n, y)
-
-    def decompose(self):
-        return [Toffoli('ccnot', [0, 'N-n', '2*N-n']),  CNOT('cnot', ['2*N-n', 0]), CNOT('cnot', [0, 'N-n'])]
-
-
-StandardGateSet = [Ident('I'), H0("H", ['0']), CRZN("C_RZN", ['n']), CNOT('CNOT', [0,1]), Toffoli('ccx', [0,1,2]),  Swap('swap', [0,1]), X('x', [0])]
+StandardGateSet = [Ident('I', ['0']), H0("H", ['0']), CRZN("Zn", ['n']), CNOT('CNOT', [0,1]), Toffoli('ccx', [0,1,2]),  Swap('swap', [0,1]), X('x', [0])]
 
 
 if __name__ == "__main__":

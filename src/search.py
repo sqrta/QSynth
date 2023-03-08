@@ -4,6 +4,7 @@ from adt import phase, sumPhase, sumPhaseMulti
 from component import *
 from z3tool import *
 import time
+import copy
 
 
 def basek(foo, intk, n, x, y, size=lambda x: x):
@@ -114,16 +115,31 @@ def verifyInduct(compon, spec, pre, dir, k=1, move=0, size=lambda x: x):
     start = time.time()
     precondition = pre(n, x, y) if pre else True
     left = inductk(spec, 0, n, x, y).z3exp()
-    leftcompon = compon[0]
+    leftcompon = compon[0][-1::-1]
     rightcompon = compon[1]
-    terms = leftMultiAlpha(leftcompon, lambda n, x, y: rightMultiAlpha(
-        rightcompon, lambda n, x, y: inductk(spec, k, n, x, y, move), n, x, y), n, x, y)
-    # if dir == 'left':
-    #     terms = leftMultiAlpha(compon, lambda n, x, y: inductk(
-    #         spec, k, n, x, y, move), n, x, y)
-    # elif dir == 'right':
-    #     terms = rightMultiAlpha(compon, lambda n, x, y: inductk(
-    #         spec, k, n, x, y, move), n, x, y)
+    func0 = lambda n, x, y: inductk(spec, k, n, x, y, move)
+    # recall = lambda n, x, y: rightMultiAlpha(rightcompon, tmp, n, x, y)
+    # print("length",len(compon[1]))
+    funcs = {0:func0}
+    for i in range(1,len(rightcompon)+1):
+        item = rightcompon[i-1]
+        funcs[i] = lambda n, x, y: rightMultiAlpha(item, funcs[i-1], n, x, y)
+    
+    lfuncs = {0:funcs[len(rightcompon)]}
+    i=1
+    lfuncs[1]= lambda n, x, y: leftMultiAlpha(leftcompon[0], lfuncs[i-1], n, x, y)
+    # item = leftcompon[i-1]
+    # lfuncs[i] = lambda n, x, y: leftMultiAlpha(item, lfuncs[i-1], n, x, y)
+    # for i in range(1,len(leftcompon)+1):
+    #     item = leftcompon[i-1]
+    #     lfuncs[i] = lambda n, x, y: leftMultiAlpha(item, lfuncs[i-1], n, x, y)
+    recall = lfuncs[len(leftcompon)]
+    terms = recall(n,x,y)
+        #tmp = recall
+    # for leftcompon in compon[0][-1::-1]:
+    #     terms = lambda n, x, y:  leftMultiAlpha(leftcompon, recall, n, x, y)
+    # terms = recall(n,x,y)
+    # terms = leftMultiAlpha(leftcompon, recall, n, x, y)
 
 
     right = terms.z3exp()
@@ -170,22 +186,22 @@ def verifyInduct(compon, spec, pre, dir, k=1, move=0, size=lambda x: x):
 def inductcase(spec, database, dir,  pre=None, base=1, k=1):
     start = time.time()
     size = lambda x: k*x
-    gi = (component('None'), component('None'))
+    gi = None
     move = 'n' if k==3 else 0
     # Add gate no need for base case
     if k>1:
-        database=[Fredkin("fredkin", ['n']), Peres("peres", ['n']), HN("H", ['n']), CCX_N("ccxn")] + database
+        database=[Fredkin("fredkin", [0,1,'n+1']), Peres("peres",[0,1,'n+1']), HN("H", ['n']), CCX_N("ccxn")] + database
     if dir == 'both':  
         for leftone in database:
             for rightone in database:
-                compon = (leftone, rightone)
+                compon = ([leftone], [rightone])
                 ri = verifyInduct(compon, spec, pre, dir, k, move, size)
                 if ri==sat:
                     gi=compon
                     return gi
-        return gi
+        return None
     for item in database:
-        compon = (Ident('I'),item) if dir == "right" else (item,Ident('I'))
+        compon = ([Ident('I')],[item]) if dir == "right" else ([item],[Ident('I')])
         ri = verifyInduct(compon, spec, pre, dir, k, move, size)
 
         if ri == sat:
@@ -200,9 +216,8 @@ def success(gb,gi):
     for gate in gb:
         if gate.name == 'None':
             return False
-    for gate in gi:
-        if gate.name == 'None':
-            return False
+    if gi==None:
+        return False
     return True
 
 def synthesis(amplitude, gateset,  hypothesis=lambda n,x,y:True):
@@ -271,8 +286,8 @@ def C_RZN(t, x, y, n, m):
 def C_RZ(y, t, n, m):
     return Equal(BVref(y, t), 1)*(BVref(y, t-n) << (m-n-1))
 
-def search(specification, database, dir,  pre=None, base=1, k=1):
-    size = lambda x: k*x
+def search(specification, database, dir,  pre=None, base=1, k=1, offset=0):
+    size = lambda x: k*x+offset
     gb = []
     spec = specification.phaseSum
     start = time.time()

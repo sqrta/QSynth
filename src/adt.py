@@ -92,6 +92,14 @@ def fredkin(n, x, y, a, b, c):
                 (BVref(x, b) * BVref(x, a)) ^ (BVref(x, a)*BVref(x, c)))
     return getSumPhase([(Eq1*Eq2*Eq3*Eq4, bv(0))])
 
+def xmaj(n,x,y,a,b,c):
+    Eq1 = Equal(mask(x, [a, b, c]), mask(y, [a, b, c]))
+    Eq2 = Equal(BVref(y, a), BVref(x, b) ^ BVref(x, a))
+    Eq3 = Equal(BVref(y, c), BVref(x, c) ^ BVref(x, b))
+    Eq4 = Equal(BVref(y, b), (BVref(x, b)*BVref(x, c)) ^
+                (BVref(x, b) * BVref(x, a)) ^ (BVref(x, a)*BVref(x, c)))
+    return getSumPhase([(Eq1*Eq2*Eq3*Eq4, bv(0))])
+
 
 def peres(n, x, y, a, b, c):
     Eq1 = Equal(mask(x, [a, b, c]), mask(y, [a, b, c]))
@@ -167,11 +175,11 @@ def qiskitbackend(base, left=None, right=None, name="foo", spec=1):
         prog += "\t\tif(n==" + str(i) + "):\n"
         prog += gatelist(base[i], 3)
     prog += f"\t\telse:\n"
-    if left:
-        prog += gatelist(left.decompose(), 3)
+    for item in left:
+        prog += gatelist(item.decompose(), 3)
     prog += f"{ntab(3)}S(circ,n-1)\n"
-    if right:
-        prog += gatelist(right.decompose(), 3)
+    for item in right:
+        prog += gatelist(item.decompose(), 3)
     prog+="\tS(circuit,N)\n\treturn circuit\n\n"
     return prog
 
@@ -188,22 +196,24 @@ def reverseb(n, width):
     return int(b[::-1], 2)
 
 class ISQIR:
-    def __init__(self, gates,k, name="foo") -> None:
+    def __init__(self, gates, name="foo", k=1) -> None:
         self.gb = gates['base']
         self.gi = gates['inductive']
         self.name = name
         self.k=k
 
-    def toQiskit(self,name=None):
+    def toQiskit(self, name=None):
         if name == None:
             name = self.name
+            
         result = ""
         for gate in self.gb:
             if gate.claim():
                 result += gate.prog().toQiskit()
-        for gate in self.gi:
-            if gate.claim():
-                result += gate.prog().toQiskit()
+        for gates in self.gi:
+            for gate in gates:
+                if gate.claim():
+                    result += gate.prog().toQiskit()
                 # print('here',result)
         return result + showProg(self.gb, self.gi, name, self.k, "qiskit")
 
