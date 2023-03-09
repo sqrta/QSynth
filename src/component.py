@@ -197,7 +197,7 @@ class X(component):
                 BVtrunc(x, n-1) | bv(1) << n]
 
     def qiskitName(self):
-        return "h"
+        return "x"
 
 
 class CNOT(component):
