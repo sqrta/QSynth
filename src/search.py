@@ -25,15 +25,13 @@ def inductk(foo, k, n, x, y, move=0, size=lambda x: x):
         return sumPhase([phase(p[0], p[1]) for p in foo(n, x, y)])
     indsumph = None
     if k == 1:
-        xk = BVtrunc(x, n-k) << move
-        yk = BVtrunc(y, n-k) << move
-        sumph = foo(n-k, xk, yk)
-        truncEq = 1
-        if move < k:
-            truncEq *= Equal(BVtrunc(x, n, n-k+1+move),
-                             BVtrunc(y, n, n-k+1+move))
-        if move > 0:
-            truncEq *= Equal(BVtrunc(x, move-1, 0), BVtrunc(y, move-1, 0))
+        xk = BVtrunc(x, size(n))
+        yk = BVtrunc(y, size(n))
+        sumph = foo(n-k, x, y)
+        # truncEq = Equal(BVref(x,size(n)), BVref(y,size(n)))
+        truncEq = Equal(BVtrunc(x, size(n), size(n-1)+1),
+                             BVtrunc(y, size(n), size(n-1)+1)) 
+
         indsumph = [phase(truncEq*p[0], p[1] << k) for p in sumph]
 
     elif k == 2:
@@ -195,8 +193,6 @@ def inductcase(spec, database, dir,  pre=None, base=1, k=1):
     #     return comp
     # else:
     #     return None
-    c=4
-    invert = [subtractor('sub', [0,1,'n'], params={'c':c}), Cadder('cadd', [0,1,'n'], params={'c':c}), X('x', registers=['n+7'])]
     if dir == 'both':  
         for leftone in database:
             for rightone in database:
@@ -210,6 +206,11 @@ def inductcase(spec, database, dir,  pre=None, base=1, k=1):
     for item in database:
         #compon = (invert, [Ident('I')])
         compon = ([Ident('I')],[item]) if dir == "right" else ([item],[Ident('I')])
+        c=0
+        if item.name=='sub':
+            c = item.params['c']
+            compon = ([Subtractor('sub', [0,1,'n'], params={'c':c}), Cadder('cadd', [0,1,'n'], params={'c':c}), X('x', registers=['n+7'])], [Ident('I')])
+            size = lambda n : n + 2*c
         ri = verifyInduct(compon, spec, pre, dir, k, move, size)
 
         if ri == sat:

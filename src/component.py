@@ -365,7 +365,7 @@ class Ident(component):
     def qiskitName(self):
         return "id"
 
-class subtractor(component):
+class Subtractor(component):
     def alpha(self, n, x, y):
         c = self.params["c"]
         Eq1 = Equal(BVtrunc(x, n+c-1, 0), BVtrunc(y, n+c-1, 0))

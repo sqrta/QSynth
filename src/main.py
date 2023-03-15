@@ -2,6 +2,7 @@
 import time
 from z3tool import *
 from qsynth import synthesis, StandardGateSet, PPSA
+from component import Subtractor,Cadder
 
 def QFTspec(n, x, y):
     u = BVtrunc(x, n)*reverse(BVtrunc(y, n), n)
@@ -36,11 +37,30 @@ def rippleSubtractSpec(n,x,y):
     Eq2 = Equal(BVtrunc(add, n-1),  BVtrunc(result, n-1))
     return [(Eq1*Eq2, bv(0))]
 
+c = 4
+
+def inversionSpec(n,x,y): 
+    Eq1 = Equal(BVtrunc(x,c,0), BVtrunc(y,c,0))
+    r = BVtrunc(y,2*c-1, c+1)
+    quet = BVtrunc(y,2*c+n-1, 2*c)
+    lamb = BVtrunc(x,c-1,1)
+    Eq2 = Equal(bv(1)<<(n-1), quet*lamb+r)
+    return [(Eq1*Eq2, bv(0))]
+
+
 def filewrite(string, path):
     with open(path, 'w') as f:
         f.write(string)
 
-if __name__ == "__main__":
+if __name__ == "__main__":  
+
+    start = time.time()
+    spec = PPSA(beta=lambda n: 2<<n, phaseSum=QFTspec)
+    prog = synthesis(spec, StandardGateSet, hypothesis = lambda n,x,y : True)
+    end =time.time()
+    print(f'QFT case uses {end-start}s')
+    filewrite(prog.toQiskit('QFT'), 'QFT.py')
+
     start = time.time()
     spec = PPSA(beta=lambda n: 1, phaseSum=rippleAdderSpec)
     prog = synthesis(spec, StandardGateSet, hypothesis =lambda n,x,y : BVref(x,0)==0)
@@ -69,9 +89,11 @@ if __name__ == "__main__":
     print(f'RippleSubtractor case uses {end-start}s')
     filewrite(prog.toQiskit('RippleSubtractor'), 'RippleSubtractor.py')
     
+    # Insert the c-qubit subtractor and conditional adder into the gateset
+    GateSet = [Subtractor('sub', params={'c':c}), Cadder('c-add', params={'c':c})] + StandardGateSet
     start = time.time()
-    spec = PPSA(beta=lambda n: 2<<n, phaseSum=QFTspec)
-    prog = synthesis(spec, StandardGateSet, hypothesis = lambda n,x,y : True)
+    spec = PPSA(beta=lambda n: 1, phaseSum=inversionSpec)
+    prog = synthesis(spec, GateSet, hypothesis = lambda n,x,y : And(n>0,BVtrunc(x,2*c+n-1,c)==(bv(1)<<(c+n))))
     end =time.time()
-    print(f'QFT case uses {end-start}s')
-    filewrite(prog.toQiskit('QFT'), 'QFT.py')
+    print(f'inversion case uses {end-start}s')
+    filewrite(prog.toQiskit('inversion'), 'inversion.py')  
