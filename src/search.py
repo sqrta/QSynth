@@ -109,8 +109,6 @@ def verifyInduct(compon, spec, pre, dir, k=1, move=0, size=lambda x: x):
     x, y, n = BitVecs('x y n', MAXL)
     # x = BVtrunc(xo, 2*n)
     # y = BVtrunc(yo, 2*n)
-    t= Solver()
-    t.add(And(x==0b00110, n==3, y==0b00110))
 
     start = time.time()
     precondition = pre(n, x, y) if pre else True
@@ -123,12 +121,16 @@ def verifyInduct(compon, spec, pre, dir, k=1, move=0, size=lambda x: x):
     funcs = {0:func0}
     for i in range(1,len(rightcompon)+1):
         item = rightcompon[i-1]
-        funcs[i] = lambda n, x, y: rightMultiAlpha(item, funcs[i-1], n, x, y)
+        def f(n,x,y,j=i):
+            return rightMultiAlpha(item, funcs[j-1], n, x, y)
+        funcs[i] = f
     
     lfuncs = {0:funcs[len(rightcompon)]}
     for i in range(1,len(leftcompon)+1):
         comp = leftcompon[i-1]
-        lfuncs[i]= lambda n, x, y: leftMultiAlpha(comp, lfuncs[i-1], n, x, y)
+        def f(n,x,y,j=i):
+            return leftMultiAlpha(comp, lfuncs[j-1], n, x, y)
+        lfuncs[i]= f 
     terms = lfuncs[len(leftcompon)](n,x,y)
 
 
@@ -193,16 +195,20 @@ def inductcase(spec, database, dir,  pre=None, base=1, k=1):
     #     return comp
     # else:
     #     return None
+    c=4
+    invert = [subtractor('sub', [0,1,'n'], params={'c':c}), Cadder('cadd', [0,1,'n'], params={'c':c}), X('x', registers=['n+7'])]
     if dir == 'both':  
         for leftone in database:
             for rightone in database:
                 compon = ([leftone], [rightone])
+                
                 ri = verifyInduct(compon, spec, pre, dir, k, move, size)
                 if ri==sat:
                     gi=compon
                     return gi
         return None
     for item in database:
+        #compon = (invert, [Ident('I')])
         compon = ([Ident('I')],[item]) if dir == "right" else ([item],[Ident('I')])
         ri = verifyInduct(compon, spec, pre, dir, k, move, size)
 

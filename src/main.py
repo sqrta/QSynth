@@ -41,14 +41,6 @@ def filewrite(string, path):
         f.write(string)
 
 if __name__ == "__main__":
-    # base gate for synthesis
-    start = time.time()
-    spec = PPSA(beta=lambda n: 1, phaseSum=rippleSubtractSpec)
-    prog = synthesis(spec, StandardGateSet, hypothesis =lambda n,x,y : BVref(x,0)==0)
-    end =time.time()
-    print(f'RippleSubtractor case uses {end-start}s')
-    filewrite(prog.toQiskit('RippleSubtractor'), 'RippleSubtractor.py')
-    
     start = time.time()
     spec = PPSA(beta=lambda n: 1, phaseSum=rippleAdderSpec)
     prog = synthesis(spec, StandardGateSet, hypothesis =lambda n,x,y : BVref(x,0)==0)
@@ -70,6 +62,13 @@ if __name__ == "__main__":
     print(f'FullAdder case uses {end-start}s')
     filewrite(prog.toQiskit('FullAdder'), 'FullAdder.py')
 
+    start = time.time()
+    spec = PPSA(beta=lambda n: 1, phaseSum=rippleSubtractSpec)
+    prog = synthesis(spec, StandardGateSet, hypothesis =lambda n,x,y : BVref(x,0)==0)
+    end =time.time()
+    print(f'RippleSubtractor case uses {end-start}s')
+    filewrite(prog.toQiskit('RippleSubtractor'), 'RippleSubtractor.py')
+    
     start = time.time()
     spec = PPSA(beta=lambda n: 2<<n, phaseSum=QFTspec)
     prog = synthesis(spec, StandardGateSet, hypothesis = lambda n,x,y : True)

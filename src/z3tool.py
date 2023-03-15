@@ -117,9 +117,15 @@ def xorSum(x,y,length=MAXL):
 def andSum(x,y,length=MAXL):
     return BVref(count(x&y, length), 0)
 
+def setZero(x,high,low):
+    tunc = BVtrunc(x,high,low)<<low
+    return x ^ tunc
+
+def setVec(x, y, high, low):
+    return setZero(x, high, low) ^ BVtrunc(y << low, high)
+
 if __name__ == '__main__':
     s = Solver()
-    x,y = BitVecs('x y', MAXL)
-    one = RepeatBitVec(MAXL, BitVecVal(1, 1)) 
-    print(BVRedAnd(one))
-    solve(y==0b1110, mask(x,[1,3])==mask(y, [1,3]))
+    x,y,z = BitVecs('x y z', MAXL)
+    
+    solve(y==0b1111,z==0b01, x==setVec(y,z, 1, 0))

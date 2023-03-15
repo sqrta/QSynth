@@ -15,8 +15,9 @@ Uo = BitVec('f', MAXL)
 
 
 class component:
-    def __init__(self, name, registers=None) -> None:
+    def __init__(self, name, registers=None, params=None) -> None:
         self.name = name
+        self.params = params
         if not registers:
             self.registers = []
         else:
@@ -183,18 +184,16 @@ class Xn(component):
 
 class X(component):
     def alpha(self, n, x, y):
-        Eq = If(ULT(n, 0), Equal(BVtrunc(x, n-1), BVtrunc(y, n-1)), bv(1))
-        d0 = Eq*Equal(BVref(y, n), bv(0))
-        d1 = Eq*Equal(BVref(y, n), bv(1))
-        return sumPhase([phase(d0, bv(0)), phase(d1, BVref(x, n))])
+        reg = eval(str(self.registers[0]))
+        Eq = Equal(x ^ (bv(1)<<reg), y)
+        return getSumPhase([(Eq, bv(0))])
 
     def My(self, n, y):
-        return [BVtrunc(y, n-1) | bv(0) << n,
-                BVtrunc(y, n-1) | bv(1) << n]
+        reg = eval(str(self.registers[0]))
+        return [y ^ (bv(1) << reg)]
 
     def Mx(self, n, x):
-        return [BVtrunc(x, n-1) | bv(0) << n,
-                BVtrunc(x, n-1) | bv(1) << n]
+        return self.My(n,x)
 
     def qiskitName(self):
         return "x"
@@ -256,8 +255,7 @@ class Xuma(component):
 class nparH(component):
     def alpha(self, n, x, y):
         return getSumPhase([(If(andSum(x, y) == 1, bv(-1), bv(1)), bv(0))])
-
-
+    
 def oracleFunc(x, length=MAXL):
     global Uo
     return BVref(Uo, 0)
@@ -367,6 +365,48 @@ class Ident(component):
     def qiskitName(self):
         return "id"
 
+class subtractor(component):
+    def alpha(self, n, x, y):
+        c = self.params["c"]
+        Eq1 = Equal(BVtrunc(x, n+c-1, 0), BVtrunc(y, n+c-1, 0))
+        add =  BVtrunc(x,2*c+n-1,n+c) - BVtrunc(x, c, 1) - BVref(x,0)
+        result = BVtrunc(y,2*c+n-1,n+c)
+        Eq2 = Equal(BVtrunc(add, c-1),  BVtrunc(result, c-1))
+        return getSumPhase([(Eq1*Eq2, bv(0))])
+
+    def Mx(self, n, x):
+        c = self.params["c"]
+        add = BVtrunc(x,2*c+n-1,n+c) - BVtrunc(x, c, 1) - BVref(x,0)
+        return [setVec(x,add,2*c+n-1,n+c)]
+    
+    def My(self,n,y):
+        c = self.params["c"]
+        add = BVtrunc(y,2*c+n-1,n+c) + BVtrunc(y, c, 1) + BVref(y,0)
+        return [setVec(y,add,2*c+n-1,n+c)]
+
+class Cadder(component):
+    def alpha(self, n, x, y):
+        c = self.params["c"]
+        Eq1 = Equal(BVtrunc(x, n+c-1, 0), BVtrunc(y, n+c-1, 0))
+        ctrl = BVref(x,2*c+n-1)
+        add =  BVtrunc(x,2*c+n-2,n+c) + ctrl*BVtrunc(x, c-1, 1) + BVref(x,0)
+        result = BVtrunc(y,2*c+n-1,n+c)
+        Eq2 = Equal(BVtrunc(add, c-2),  BVtrunc(result, c-2))
+        return getSumPhase([(Eq1*Eq2, bv(0))])
+    
+    def Mx(self,n,x):
+        c = self.params["c"]
+        ctrl = BVref(x,2*c+n-1)
+        add =  BVtrunc(x,2*c+n-2,n+c) + ctrl*BVtrunc(x, c-1, 1) + BVref(x,0)
+        return [setVec(x,add,2*c+n-2,n+c)]
+    
+    def My(self, n, y):
+        c = self.params["c"]
+        ctrl = BVref(y,2*c+n-1)
+        add =  BVtrunc(y,2*c+n-2,n+c) - ctrl*BVtrunc(y, c-1, 1) - BVref(x,0)
+        return [setVec(y,add,2*c+n-2,n+c)]
+    
+
 
 def setbit(x, qubits):
     allset = allsubset(qubits)
@@ -382,5 +422,11 @@ StandardGateSet = [Ident('I', ['0']), H0("H", ['0']), CRZN("Zn", ['n']), CNOT('C
 
 
 if __name__ == "__main__":
-    print(allsubset({1, 2, 3}))
+    s = Solver()
+    x,y,n = BitVecs('x y n', MAXL)
+    component = Cadder('sub',registers=[0,1,"n"], params={'c':4})
+    start = "0000000000110"
+    start = int(start,2)
+    term = component.alpha(n,x,y)[0][0]
+    solve(x==0b10000110,n==3, term==1)
 
