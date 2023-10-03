@@ -117,17 +117,36 @@ class Swap(component):
         return "swap"
 
 
-class Toffoli(component):
+class Toffolin(component):
     def alpha(self, n, x, y):
         Eq1 = Equal(mask(x, [2*n]), mask(y, [2*n]))
-        Equal = Equal(BVref(y,2*n), )
-        return getSumPhase([(Eq, bv(0))])
+        result = (BVref(x,n) & BVref(x, 2*n-1)) ^ BVref(x, 2*n)
+        Eq2 = Equal(BVref(y,2*n), result)
+        return getSumPhase([(Eq1*Eq2, bv(0))])
 
-    def Mx(self, n, z):
-        return [z]
+    def Mx(self, n, x):
+        qubits = {2*n}
+        return setbit(x, qubits)
+    
+    def My(self, n, y):
+        return self.Mx(n, y)
 
-    def My(self, n, z):
-        return [z]
+    def qiskitName(self):
+        return "ccx"
+    
+class Toffoli(component):
+    def alpha(self, n, x, y):
+        Eq1 = Equal(mask(x, [2]), mask(y, [2]))
+        result = (BVref(x,0) & BVref(x, 1)) ^ BVref(x, 2)
+        Eq2 = Equal(BVref(y,2), result)
+        return getSumPhase([(Eq1*Eq2, bv(0))])
+
+    def Mx(self, n, x):
+        qubits = {2}
+        return setbit(x, qubits)
+    
+    def My(self, n, y):
+        return self.Mx(n, y)
 
     def qiskitName(self):
         return "ccx"

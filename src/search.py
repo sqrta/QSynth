@@ -183,11 +183,13 @@ def inductcase(spec, database, dir,  pre=None, base=1, k=1):
     gi = None
     move = 'n' if k==3 else 0
     # Add gate no need for base case
+    if k==1:
+        database += [HN("Hn", ['n'])] 
     if k==3:
         database += [tele('tele', ['n', '2n', '3n'])]    
-    if k>=1:
+    if k>1:
         # database = [Xmaj("xmaj",[0,1,'n+1']), Xuma("xuma", [0,1,'n+1'])]
-        database=[ HN("Hn", ['n']),Fredkin("fredkin", [0,1,'n+1']), Peres("peres",[0,1,'n+1']), CCX_N("ccxn"), Xmaj("xmaj",[0,1,'n+1']), Xuma("xuma", [0,1,'n+1'])] + database
+        database=[Fredkin("fredkin", [0,1,'n+1']), Peres("peres",[0,1,'n+1']), CCX_N("ccxn"), Xmaj("xmaj",[0,1,'n+1']), Xuma("xuma", [0,1,'n+1'])] + database
 
     # comp = ([Xn("X", "n+1"), Fredkin("fredkin", [0,1,'n+1'])], [Peres("peres",[0,1,'n+1']), Xn("X", "n+1")])
     

@@ -72,7 +72,7 @@ def teleportation(n,x,y):
 
 # Toffoli gate with n+1 control qubits
 def toff_nPlus1(n,x,y):
-    control = BVRedAnd(x, n + 1)
+    control = BVReductAnd(x, n)
     Eq = Equal(BVref(y,2*n), control ^ BVref(x, 2*n))
     BaseEq = Equal(BVtrunc(x,n), BVtrunc(y,n))
     return [(Eq*BaseEq, bv(0))]
@@ -85,6 +85,14 @@ def filewrite(string, path):
         f.write(string)
 
 if __name__ == "__main__":
+
+    # start = time.time()
+    # spec = PPSA(beta=lambda n: 1, phaseSum=toff_nPlus1)
+    # prog = synthesis(spec, StandardGateSet, hypothesis =lambda n,x,y : And(BVtrunc(x,2*n-1,n+1)==0, n>0), base=1)
+    # end =time.time()
+    # print(f'ToffoliN case uses {end-start}s')
+    # filewrite(prog.toQiskit('ToffoliN'), 'ToffoliN.py')
+    # exit(0)
 
     start = time.time()
     spec = PPSA(beta=lambda n: 1, phaseSum=Uniform)
@@ -100,6 +108,28 @@ if __name__ == "__main__":
     print(f'Teleportation case uses {end-start}s')
     filewrite(prog.toQiskit('Teleporation'), 'Teleporation.py')
 
+    start = time.time()
+    spec = PPSA(beta=lambda n: 2, phaseSum=GHZspec)
+    prog = synthesis(spec, StandardGateSet, hypothesis = lambda n,x,y : x==bv(0))
+    end =time.time()
+    print(f'GHZ case uses {end-start}s')
+    filewrite(prog.toQiskit('GHZ'), 'GHZ.py')
+
+    # start = time.time()
+    # spec = PPSA(beta=lambda n: 1, phaseSum=rippleSubtractSpec)
+    # prog = synthesis(spec, StandardGateSet, hypothesis =lambda n,x,y : BVref(x,0)==0)
+    # end =time.time()
+    # print(f'RippleSubtractor case uses {end-start}s')
+    # filewrite(prog.toQiskit('RippleSubtractor'), 'RippleSubtractor.py')
+    
+    # Insert the c-qubit subtractor and conditional adder into the gateset
+    GateSet = [Subtractor('sub', params={'c':c}), Cadder('c-add', params={'c':c})] + StandardGateSet
+    start = time.time()
+    spec = PPSA(beta=lambda n: 1, phaseSum=inversionSpec)
+    prog = synthesis(spec, GateSet, hypothesis = lambda n,x,y : And(n>0,BVtrunc(x,2*c+n-1,c)==(bv(1)<<(c+n))))
+    end =time.time()
+    print(f'inversion case uses {end-start}s')
+    filewrite(prog.toQiskit('inversion'), 'Inversion.py')  
 
     start = time.time()
     spec = PPSA(beta=lambda n: 1, phaseSum=newRipSub)
@@ -136,27 +166,4 @@ if __name__ == "__main__":
     # end =time.time()
     # print(f'RippleAdder case uses {end-start}s')
     # filewrite(prog.toQiskit('RippleAdder'), 'RippleAdder.py')
-
-    start = time.time()
-    spec = PPSA(beta=lambda n: 2, phaseSum=GHZspec)
-    prog = synthesis(spec, StandardGateSet, hypothesis = lambda n,x,y : x==bv(0))
-    end =time.time()
-    print(f'GHZ case uses {end-start}s')
-    filewrite(prog.toQiskit('GHZ'), 'GHZ.py')
-
-    # start = time.time()
-    # spec = PPSA(beta=lambda n: 1, phaseSum=rippleSubtractSpec)
-    # prog = synthesis(spec, StandardGateSet, hypothesis =lambda n,x,y : BVref(x,0)==0)
-    # end =time.time()
-    # print(f'RippleSubtractor case uses {end-start}s')
-    # filewrite(prog.toQiskit('RippleSubtractor'), 'RippleSubtractor.py')
-    
-    # Insert the c-qubit subtractor and conditional adder into the gateset
-    GateSet = [Subtractor('sub', params={'c':c}), Cadder('c-add', params={'c':c})] + StandardGateSet
-    start = time.time()
-    spec = PPSA(beta=lambda n: 1, phaseSum=inversionSpec)
-    prog = synthesis(spec, GateSet, hypothesis = lambda n,x,y : And(n>0,BVtrunc(x,2*c+n-1,c)==(bv(1)<<(c+n))))
-    end =time.time()
-    print(f'inversion case uses {end-start}s')
-    filewrite(prog.toQiskit('inversion'), 'Inversion.py')  
 
