@@ -65,7 +65,7 @@ def inductk(foo, k, n, x, y, move=0, size=lambda x: x):
         sumph = foo(n-1, xk, yk)
         truncEq = Equal(BVref(x, n), BVref(y, n)) * Equal(BVref(x, 2*n),
                                                           BVref(y, 2*n)) * Equal(BVref(x, 3*n), BVref(y, 3*n))
-        indsumph = [phase(truncEq*p[0], p[1] << k) for p in sumph]
+        indsumph = [phase(truncEq*p[0], p[1]) for p in sumph]
     return sumPhase(indsumph)
 
 
@@ -152,7 +152,7 @@ def verifyInduct(compon, spec, pre, dir, k=1, move=0, size=lambda x: x):
         return sat
     else:
         '''
-        if leftcompon[0].name == "xmaj" and rightcompon[0].name=="xuma" and k==2:
+        if rightcompon[0].name == "Hn" and k==1:
             print(s.model())
             bvprint(s.model(), x, 'x')       
             bvprint(s.model(), y, "y")
@@ -165,15 +165,15 @@ def verifyInduct(compon, spec, pre, dir, k=1, move=0, size=lambda x: x):
             b=1
             c=n+1
             
-            for z in leftcompon[0].Mx(n,x):
-                bvprint(s.model(),z, 'z')
-                bvprint(s.model(), leftcompon[0].alpha(n,x,z).deltas(), "zdelta")  
+            # for z in leftcompon[0].Mx(n,x):
+            #     bvprint(s.model(),z, 'z')
+            #     bvprint(s.model(), leftcompon[0].alpha(n,x,z).deltas(), "zdelta")  
 
-                bvprint(s.model(), Equal(BVref(z, a), BVref(x, b) ^ BVref(x, a)), "eq2")
-                bvprint(s.model(), Equal(BVref(z, c), (BVref(~x, c)) ^ BVref(x, b)), "eq3")
-                bvprint(s.model(), Equal(BVref(z, b), (BVref(x, b)* (BVref(~x, c))) ^
-                (BVref(x, b) * BVref(x, a)) ^ (BVref(x, a)*(BVref(~x, c)))), "eq4")  
-
+            #     bvprint(s.model(), Equal(BVref(z, a), BVref(x, b) ^ BVref(x, a)), "eq2")
+            #     bvprint(s.model(), Equal(BVref(z, c), (BVref(~x, c)) ^ BVref(x, b)), "eq3")
+            #     bvprint(s.model(), Equal(BVref(z, b), (BVref(x, b)* (BVref(~x, c))) ^
+            #     (BVref(x, b) * BVref(x, a)) ^ (BVref(x, a)*(BVref(~x, c)))), "eq4")  
+            exit(0)
         '''
         return unsat
 
@@ -183,9 +183,12 @@ def inductcase(spec, database, dir,  pre=None, base=1, k=1):
     gi = None
     move = 'n' if k==3 else 0
     # Add gate no need for base case
-    if k>1:
+    if k==3:
+        database += [tele('tele', ['n', '2n', '3n'])]    
+    if k>=1:
         # database = [Xmaj("xmaj",[0,1,'n+1']), Xuma("xuma", [0,1,'n+1'])]
-        database=[Fredkin("fredkin", [0,1,'n+1']), Peres("peres",[0,1,'n+1']), HN("H", ['n']), CCX_N("ccxn"), Xmaj("xmaj",[0,1,'n+1']), Xuma("xuma", [0,1,'n+1'])] + database
+        database=[ HN("Hn", ['n']),Fredkin("fredkin", [0,1,'n+1']), Peres("peres",[0,1,'n+1']), CCX_N("ccxn"), Xmaj("xmaj",[0,1,'n+1']), Xuma("xuma", [0,1,'n+1'])] + database
+
     # comp = ([Xn("X", "n+1"), Fredkin("fredkin", [0,1,'n+1'])], [Peres("peres",[0,1,'n+1']), Xn("X", "n+1")])
     
     # ri = verifyInduct(comp, spec, pre, dir, k, move, size)

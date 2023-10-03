@@ -21,6 +21,7 @@ def BVtrunc(vec, upper, lower=0, length = MAXL):
     try:
         correctr = LShR((vec << (length - upper - 1)), (length - upper - 1 + lower))
     except:
+        print('trunc')
         print(vec, length, upper, lower)
         exit(0)
     return (If(upper>= lower, correctr, bv(0,length)))
@@ -62,6 +63,7 @@ def bv(a, length = MAXL):
     try:
         return BitVecVal(a, length)
     except:
+        print('sum')
         print(a, length)
         exit(0)
 
@@ -128,4 +130,4 @@ if __name__ == '__main__':
     s = Solver()
     x,y,z = BitVecs('x y z', MAXL)
     
-    solve(y==0b1111,z==0b01, x==setVec(y,z, 1, 0))
+    solve(BVReductAnd(x, 4)==1)

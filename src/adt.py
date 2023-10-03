@@ -29,12 +29,14 @@ def sumPhaseMulti(a, b):
     '''
     multiplication of two sumPhase
     '''
+
     if not a or not b:
         return None
     phaselist = []
     for i in a.phases:
         for j in b.phases:
             phaselist.append(phaseMulti(i, j))
+   
     return sumPhase(phaselist)
 
 class sumPhase:

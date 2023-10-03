@@ -119,7 +119,8 @@ class Swap(component):
 
 class Toffoli(component):
     def alpha(self, n, x, y):
-        Eq = Equal(x, y)
+        Eq1 = Equal(mask(x, [2*n]), mask(y, [2*n]))
+        Equal = Equal(BVref(y,2*n), )
         return getSumPhase([(Eq, bv(0))])
 
     def Mx(self, n, z):
@@ -252,6 +253,7 @@ class Xuma(component):
 
     def decompose(self):
         return [Toffoli('ccnot', [0, '2*N-n+1', 'N-n+1']),  CNOT('cnot', ['N-n+1', 0]), CNOT('cnot', [0, '2*N-n+1']), X("x", ['2*N-n+1'])]
+    
 class nparH(component):
     def alpha(self, n, x, y):
         return getSumPhase([(If(andSum(x, y) == 1, bv(-1), bv(1)), bv(0))])
@@ -289,6 +291,22 @@ class Y(component):
     def My(self, n, y):
         return [BVtrunc(y, n-1, 1) << 1 | bv(1), BVtrunc(y, n-1, 1) << 1, BVtrunc(y, n-1, 1) << 1 | bv(1) << n, BVtrunc(y, n-1, 1) << 1 | (bv(1) | bv(1) << n)]
 
+class tele(component):
+    def alpha(self, n, x, y):
+        result = BVref(x,n) ^ BVref(y,3*n)
+        Eq = Equal(result, BVref(y,2*n))
+        baseEq = Equal(BVtrunc(x, n-1, 0), BVtrunc(y,n-1, 0))*Equal(BVtrunc(x, 2*n-1, n+1), BVtrunc(y,2*n-1, n+1))*Equal(BVtrunc(x, 3*n-1, 2*n+1), BVtrunc(y,3*n-1, 2*n+1))
+        return getSumPhase([(baseEq*Eq, BVref(x,n)<<(n-1))])
+
+    def Mx(self, n, x):
+        qubits = {n, 2*n, 3*n}
+        return setbit(x, qubits)
+
+    def My(self, n, y):
+        return self.Mx(n, y)
+
+    def decompose(self):
+        return [H0("h",['N+n']),CNOT('cnot', ['N+n','2*N+n']), CNOT('cnot', ['n', 'N+n']), H0('h', ['n'])]
 
 class CCX_N(component):
     def alpha(self, n, x, y):
