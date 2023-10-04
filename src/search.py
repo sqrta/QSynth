@@ -35,20 +35,19 @@ def inductk(foo, k, n, x, y, move=0, size=lambda x: x):
         indsumph = [phase(truncEq*p[0], p[1] << k) for p in sumph]
 
     elif k == 2:
-        # if move == 'n':
-        x1 = BVtrunc(x,n,1)
-        x2 = BVtrunc(x, 2*n, n+2) <<n
-        y1 = BVtrunc(y,n,1)
-        y2 = BVtrunc(y, 2*n, n+2) <<n
-        truncEq = Equal(BVref(x, 0), BVref(y, 0)) * \
-            Equal(BVref(x, n+1), BVref(y, n+1))  
-        # else:
-        #     x1 = BVtrunc(x, n-1)
-        #     x2 = BVtrunc(x, 2*n-1, n+1) << n          
-        #     y1 = BVtrunc(y, n-1)
-        #     y2 = BVtrunc(y, 2*n-1, n+1) << n
-        #     truncEq = Equal(BVref(x, n), BVref(y, n)) * \
-        #         Equal(BVref(x, 2*n), BVref(y, 2*n))            
+        if move == 1:
+            x1 = BVtrunc(x,n,1)
+            x2 = BVtrunc(x, 2*n, n+2) <<n
+            y1 = BVtrunc(y,n,1)
+            y2 = BVtrunc(y, 2*n, n+2) <<n
+            truncEq = Equal(BVref(x, 0), BVref(y, 0)) * \
+                Equal(BVref(x, n+1), BVref(y, n+1))  
+        else:
+            x1 = BVtrunc(x, n-1)
+            x2 = BVtrunc(x, 2*n-1, n+1) << n          
+            y1 = BVtrunc(y, n-1)
+            y2 = BVtrunc(y, 2*n-1, n+1) << n
+            truncEq = Equal(BVref(x, n), BVref(y, n)) * Equal(BVref(x, 2*n), BVref(y, 2*n))            
         xk = x1 | x2
         yk = y1 | y2
         # if move == 'n':
@@ -103,7 +102,7 @@ def verifyBase(compon, spec, pre, k, size):
         return unsat
 
 
-def verifyInduct(compon, spec, pre, dir, k=1, move=0, size=lambda x: x):
+def verifyInduct(compon, spec, pre, dir, k=1, move=1, size=lambda x: x):
     x, y, n = BitVecs('x y n', MAXL)
     # x = BVtrunc(xo, 2*n)
     # y = BVtrunc(yo, 2*n)
@@ -137,7 +136,8 @@ def verifyInduct(compon, spec, pre, dir, k=1, move=0, size=lambda x: x):
     leftDelta = inductk(spec, 0, n, x, y).deltas()
     s = Solver()
     ''''''
-    Claim = Implies(And(UGE(n, 1), ULT(n,SPACE), ULT(size(n), SPACE), precondition),
+    # print("move", move)
+    Claim = Implies(And(UGE(n, move), ULT(n,SPACE), ULT(size(n), SPACE), precondition),
                     # And(left==right, rightDelta == leftDelta))
                     And(BVtrunc(left, size(n)) == BVtrunc(right, size(n)), rightDelta == leftDelta))
     s.add(Not(Claim))
@@ -152,7 +152,7 @@ def verifyInduct(compon, spec, pre, dir, k=1, move=0, size=lambda x: x):
         return sat
     else:
         '''
-        if rightcompon[0].name == "Hn" and k==1:
+        if rightcompon[0].name == "toff" and k==2:
             print(s.model())
             bvprint(s.model(), x, 'x')       
             bvprint(s.model(), y, "y")
@@ -165,9 +165,10 @@ def verifyInduct(compon, spec, pre, dir, k=1, move=0, size=lambda x: x):
             b=1
             c=n+1
             
-            # for z in leftcompon[0].Mx(n,x):
-            #     bvprint(s.model(),z, 'z')
-            #     bvprint(s.model(), leftcompon[0].alpha(n,x,z).deltas(), "zdelta")  
+            for z in rightcompon[0].My(n,y):
+                bvprint(s.model(),z, 'z')
+                bvprint(s.model(), rightcompon[0].alpha(n,z,y).deltas(), "zdelta")  
+                bvprint(s.model(), func0(n,x,z).deltas(), 'induct')
 
             #     bvprint(s.model(), Equal(BVref(z, a), BVref(x, b) ^ BVref(x, a)), "eq2")
             #     bvprint(s.model(), Equal(BVref(z, c), (BVref(~x, c)) ^ BVref(x, b)), "eq3")
@@ -189,21 +190,15 @@ def inductcase(spec, database, dir,  pre=None, base=1, k=1):
         database += [tele('tele', ['n', '2n', '3n'])]    
     if k>1:
         # database = [Xmaj("xmaj",[0,1,'n+1']), Xuma("xuma", [0,1,'n+1'])]
-        database=[Fredkin("fredkin", [0,1,'n+1']), Peres("peres",[0,1,'n+1']), CCX_N("ccxn"), Xmaj("xmaj",[0,1,'n+1']), Xuma("xuma", [0,1,'n+1'])] + database
+        database=[Toffolin("toff", ['n', '2*n-1', '2*n']),Fredkin("fredkin", [0,1,'n+1']), Peres("peres",[0,1,'n+1']), CCX_N("ccxn"), Xmaj("xmaj",[0,1,'n+1']), Xuma("xuma", [0,1,'n+1'])] + database
 
     # comp = ([Xn("X", "n+1"), Fredkin("fredkin", [0,1,'n+1'])], [Peres("peres",[0,1,'n+1']), Xn("X", "n+1")])
-    
-    # ri = verifyInduct(comp, spec, pre, dir, k, move, size)
-    # if ri==sat:
-    #     return comp
-    # else:
-    #     return None
     if dir == 'both':  
         for leftone in database:
             for rightone in database:
                 compon = ([leftone], [rightone])
                 
-                ri = verifyInduct(compon, spec, pre, dir, k, move, size)
+                ri = verifyInduct(compon, spec, pre, dir, k, base, size)
                 if ri==sat:
                     gi=compon
                     return gi
@@ -216,7 +211,7 @@ def inductcase(spec, database, dir,  pre=None, base=1, k=1):
             c = item.params['c']
             compon = ([Subtractor('sub', [0,1,'n'], params={'c':c}), Cadder('cadd', [0,1,'n'], params={'c':c}), X('x', registers=['n+7'])], [Ident('I')])
             size = lambda n : n + 2*c
-        ri = verifyInduct(compon, spec, pre, dir, k, move, size)
+        ri = verifyInduct(compon, spec, pre, dir, k, base, size)
 
         if ri == sat:
             gi = compon
@@ -234,10 +229,10 @@ def success(gb,gi):
         return False
     return True
 
-def synthesis(amplitude, gateset,  hypothesis=lambda n,x,y:True):
-    for dir in ['right','left', 'both']:
+def synthesis(amplitude, gateset,  hypothesis=lambda n,x,y:True, base=1):
+    for dir in ['right','left', 'both',]:
         for depth in range(1,4):
-            gb,gi = search(amplitude,gateset, dir, hypothesis, k=depth)
+            gb,gi = search(amplitude,gateset, dir, hypothesis, k=depth, base=base)
             if success(gb,gi):
                 return ISQIR({'base':gb, 'inductive':gi}, k= depth)
                 
@@ -309,7 +304,7 @@ def search(specification, database, dir,  pre=None, base=1, k=1, offset=0):
         tmp = None
         for item in database:
             rb = verifyBase(item, spec, pre, i, size)
-            # print(rb,item.name)
+            # print("base", rb,item.name)
             if rb == sat:
                 tmp = item
                 break
@@ -317,7 +312,7 @@ def search(specification, database, dir,  pre=None, base=1, k=1, offset=0):
             gb.append(tmp)
         else:
             gb.append(component('None'))
-    gi = inductcase(spec, database, dir,  pre, k=k)
+    gi = inductcase(spec, database, dir,  pre, k=k, base= base)
     end = time.time()
     # print("Base step uses {0}s".format(end-start))
 
