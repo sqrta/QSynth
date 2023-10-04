@@ -85,8 +85,31 @@ class Spec:
 
     def alpha(self,n,x,y):
         raise NotImplementedError()
+    
+class Index:
+    def __init__(self, slope, offset=0,rev=False):
+        self.slope = slope
+        self.offset = offset
+        self.rev = rev
 
-def fredkin(n, x, y, a, b, c):
+    def addOffset(self, num):
+        self.offset+=num
+
+    def addSlope(self,num):
+        self.slope+=num
+
+    def __str__(self) -> str:
+        result = "n"
+        if self.slope>1:
+            result = f"{self.slope-1}*N{'-' if self.rev else '+'}"+result
+        if self.offset>0:
+            result += f"+{self.offset}"
+        elif self.offset<0:
+            result += f"{self.offset}"
+        return result
+
+
+def maj(n, x, y, a, b, c):
     Eq1 = Equal(mask(x, [a, b, c]), mask(y, [a, b, c]))
     Eq2 = Equal(BVref(y, a), BVref(x, b) ^ BVref(x, a))
     Eq3 = Equal(BVref(y, c), BVref(x, c) ^ BVref(x, b))
@@ -110,14 +133,14 @@ def xuma(n, x, y, a, b, c):
     return getSumPhase([(Eq1*Eq2*Eq3*Eq4, bv(0))])
 
 
-def peres(n, x, y, a, b, c):
+def uma(n, x, y, a, b, c):
     Eq1 = Equal(mask(x, [a, b, c]), mask(y, [a, b, c]))
     Eq2 = Equal(BVref(y, a), BVref(x, a) ^ BVref(y, b))
     Eq3 = Equal(BVref(y, c), BVref(x, c) ^ BVref(y, a))
     Eq4 = Equal(BVref(y, b), BVref(x, b) ^ (BVref(x, a)*BVref(x, c)))
     return getSumPhase([(Eq1*Eq2*Eq3*Eq4, bv(0))])
 
-def showProg(base, gi, name="foo", inductExp=1, backend="sqir"):
+def showProg(base, gi, name="foo", inductExp=1, backend="sqir", offset=1):
     if not base:
         return "No solutions"
     left,right = gi
@@ -138,7 +161,7 @@ def showProg(base, gi, name="foo", inductExp=1, backend="sqir"):
             prog += sqirName(right)
         prog += "\n\t end."
     elif backend == 'qiskit':
-        prog = qiskitbackend(base,left,right, name, inductExp)
+        prog = qiskitbackend(base,left,right, name, inductExp,offset)
     elif backend == 'qsharp':
         def qsharpName(ins):
             nameMap = {'CZ': "(Controlled Z)"}
@@ -156,7 +179,7 @@ def showProg(base, gi, name="foo", inductExp=1, backend="sqir"):
         prog += "}"
     return prog
 
-def qiskitbackend(base, left=None, right=None, name="foo", spec=1):
+def qiskitbackend(base, left=None, right=None, name="foo", spec=1, offset=1):
     prog = ""
     def qiskitName(ins):
         nameMap = {'CNOT': "cx", "H": 'h'}
@@ -175,20 +198,29 @@ def qiskitbackend(base, left=None, right=None, name="foo", spec=1):
             instructions = [gates]
         ops = [circCall(gate, circ) for gate in instructions]
         return ntab(tabnum)+ f"\n{ntab(tabnum)}".join(ops) + "\n"
+    
+    def flatten(module, cont):
+        insList = []
+        for item in module:
+            ins = item.decompose()
+            if isinstance(ins, list):
+                ins = [item.control(0) if cont==2 else item for item in ins]
+                insList+=ins
+            else:
+                insList.append(ins)
+        return insList
 
     prog += "def " + name + "(N):\n"
-    size = "N+1" if spec==1 else f"{spec}*N+1"
+    size = f"N+{offset}" if spec==1 else f"{spec}*N+{offset}"
     prog+=f"\tcircuit=QuantumCircuit({size})\n"     
     prog += "\tdef S(circ, n):\n"   
     for i in range(len(base)):       
         prog += "\t\tif(n==" + str(i) + "):\n"
         prog += gatelist(base[i], 3)
     prog += f"\t\telse:\n"
-    for item in left:
-        prog += gatelist(item.decompose(), 3)
+    prog += gatelist(flatten(left, offset), 3)
     prog += f"{ntab(3)}S(circ,n-1)\n"
-    for item in right:
-        prog += gatelist(item.decompose(), 3)
+    prog += gatelist(flatten(right, offset), 3)
     prog+="\tS(circuit,N)\n\treturn circuit\n\n"
     return prog
 
@@ -211,11 +243,12 @@ class ISQIR:
         self.name = name
         self.k=k
 
-    def toQiskit(self, name=None):
+    def toQiskit(self, name=None, offset=1):
         if name == None:
             name = self.name
             
-        result = ""
+        result = "from qiskit import QuantumCircuit\n"
+        result += "from math import pi\n\n"
         for gate in self.gb:
             if gate.claim():
                 result += gate.prog().toQiskit()
@@ -224,9 +257,10 @@ class ISQIR:
                 if gate.claim():
                     result += gate.prog().toQiskit()
                 # print('here',result)
-        return result + showProg(self.gb, self.gi, name, self.k, "qiskit")
+        return result + showProg(self.gb, self.gi, name, self.k, "qiskit", offset)
 
 class PPSA:
     def __init__(self, beta, phaseSum) -> None:
         self.beta = beta
         self.phaseSum = phaseSum
+

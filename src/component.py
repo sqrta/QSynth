@@ -43,6 +43,9 @@ class component:
 
     def decompose(self):
         return self
+    
+    def control(self, ctrl):
+        return self
 
     def My(self, n, y):
         raise(self.name+" does not have My")
@@ -99,7 +102,7 @@ class CRZN(component):
         return True
 
     def prog(self):
-        return ISQIR({'base':[HN('h', ['N'])], 'inductive':([Ident('I')],[CRZ0N('cp', ['pi/2**n', 'N-n', 'n'])])}, name='Zn')
+        return ISQIR({'base':[HN('h', [Index(1)])], 'inductive':([Ident('I')],[CRZ0N('cp', ['pi/2**n', Index(2, rev=True), Index(1)])])}, name='Zn')
 
 
 class Swap(component):
@@ -234,10 +237,15 @@ class CNOT(component):
                 BVtrunc(y, n-1) ^ (bv(1) << n)]
 
     def qiskitName(self):
-        return "cx"
+        return self.name
 
     def decompose(self):
-        return CNOT('cnot', ['n-1', 'n'])
+        return CNOT('cx', [Index(1,-1), Index(1)])
+    
+    def control(self, ctrl):
+        for index in self.registers:
+            index.addOffset(1)
+        return CNOT('ccx', [ctrl]+ self.registers)
 
 class Xmaj(component):
     def alpha(self, n, x, y):
@@ -254,7 +262,7 @@ class Xmaj(component):
         return self.Mx(n, y)
 
     def decompose(self):
-        return [X("x",['2*N-n+1']),CNOT('cnot', ['N-n+1','2*N-n+1']), CNOT('cnot', ['N-n+1', 0]), Toffoli('ccnot', [0, '2*N-n+1', 'N-n+1'])]
+        return [X("x",[Index(3,1,True)]),CNOT('cx', [Index(2,1,True),Index(3,1,True)]), CNOT('cx', [Index(2,1,True), Index(2,0,True)]), Toffoli('ccx', [Index(2,0,True), Index(3,1,True), Index(2,1,True)])]
     
 class Xuma(component):
     def alpha(self, n, x, y):
@@ -271,7 +279,7 @@ class Xuma(component):
         return self.Mx(n, y)
 
     def decompose(self):
-        return [Toffoli('ccnot', [0, '2*N-n+1', 'N-n+1']),  CNOT('cnot', ['N-n+1', 0]), CNOT('cnot', [0, '2*N-n+1']), X("x", ['2*N-n+1'])]
+        return [Toffoli('ccx', [Index(2,0,True), Index(3,1,True), Index(2,1,True)]),  CNOT('cx', [Index(2,1,True), Index(2,0,True)]), CNOT('cx', [Index(2,0,True), Index(3,1,True)]), X("x", [Index(3,1,True)])]
     
 class nparH(component):
     def alpha(self, n, x, y):
@@ -325,7 +333,7 @@ class tele(component):
         return self.Mx(n, y)
 
     def decompose(self):
-        return [H0("h",['N+n']),CNOT('cnot', ['N+n','2*N+n']), CNOT('cnot', ['n', 'N+n']), H0('h', ['n'])]
+        return [H0("h",[Index(2)]),CNOT('cx', [Index(2),Index(3)]), CNOT('cx', [Index(1), Index(2)]), H0('h', [Index(1)])]
 
 class CCX_N(component):
     def alpha(self, n, x, y):
@@ -343,16 +351,16 @@ class CCX_N(component):
         return [BVtrunc(y, 3*n-1, 1) << 1 | bv(1), BVtrunc(y, 3*n-1, 1) << 1, BVtrunc(y, 3*n-1, 1) << 1 | bv(1) << (3*n), BVtrunc(y, 3*n-1, 1) << 1 | (bv(1) | bv(1) << (3*n))]
 
     def decompose(self):
-        return [Toffoli('ccnot', ['n', 'N+n', '2*N+n']), CNOT('cnot', ['n', 'N+n']), Toffoli('ccnot', ['N+n', 0, '2*N+n']),
-                CNOT('cnot', ['N+n', 0]), CNOT('cnot', ['n', 'N+n']), Swap('swap', [0, '2*N+n'])]
+        return [Toffoli('ccx', [Index(1), Index(2), Index(3)]), CNOT('cx', [Index(1), Index(2)]), Toffoli('ccx', [Index(2), 0, Index(3)]),
+                CNOT('cx', [Index(2), 0]), CNOT('cx', [Index(1), Index(2)]), Swap('swap', [0, Index(3)])]
 
 
-class Fredkin(component):
+class MAJ(component):
     def alpha(self, n, x, y):
         params=[]
         for reg in self.registers:
             params.append(eval(str(reg)))
-        return fredkin(n, x, y, *params)
+        return maj(n, x, y, *params)
 
     def Mx(self, n, x):
         qubits = {0, 1, n+1}
@@ -362,15 +370,15 @@ class Fredkin(component):
         return self.Mx(n, y)
 
     def decompose(self):
-        return [CNOT('cnot', ['N-n+1','2*N-n+1']), CNOT('cnot', ['N-n+1', 0]), Toffoli('ccnot', [0, '2*N-n+1', 'N-n+1'])]
+        return [CNOT('cx', [Index(2,1,True),Index(3,1,True)]), CNOT('cx', [Index(2,1,True), Index(2,0,True)]), Toffoli('ccx', [Index(2,0,True), Index(3,1,True), Index(2,1,True)])]
 
 
-class Peres(component):
+class UMA(component):
     def alpha(self, n, x, y):
         params=[]
         for reg in self.registers:
             params.append(eval(str(reg)))
-        return peres(n, x, y, *params)
+        return uma(n, x, y, *params)
 
     def Mx(self, n, x):
         qubits = {0, 1, n+1}
@@ -380,13 +388,8 @@ class Peres(component):
         return self.Mx(n, y)
 
     def decompose(self):
-        return [Toffoli('ccnot', [0, '2*N-n+1', 'N-n+1']),  CNOT('cnot', ['N-n+1', 0]), CNOT('cnot', [0, '2*N-n+1'])]
+        return [Toffoli('ccx', [Index(2,0,True), Index(3,1,True), Index(2,1,True)]),  CNOT('cx', [Index(2,1,True), Index(2,0,True)]), CNOT('cx', [Index(2,0,True), Index(3,1,True)])]
 
-
-
-class divider(component):
-    def alpha(self, n, x, y):
-        return super().alpha(n, x, y)
 
 class Ident(component):
     def alpha(self, n, x, y):
@@ -455,7 +458,7 @@ def setbit(x, qubits):
         result.append(xtmp)
     return result
 
-StandardGateSet = [Ident('I', ['0']), H0("H", ['0']), CRZN("Zn", ['n']), CNOT('CNOT', [0,1]), Toffoli('ccx', [0,1,2]),  Swap('swap', [0,1]), X('x', [0])]
+StandardGateSet = [Ident('I', ['0']), H0("H", ['0']), CRZN("Zn", [Index(1)]), CNOT('cx', [0,1]), Toffoli('ccx', [0,1,2]),  Swap('swap', [0,1]), X('x', [0])]
 
 
 if __name__ == "__main__":

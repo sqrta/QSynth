@@ -50,7 +50,7 @@ def inductk(foo, k, n, x, y, move=0, size=lambda x: x):
             truncEq = Equal(BVref(x, n), BVref(y, n)) * Equal(BVref(x, 2*n), BVref(y, 2*n))            
         xk = x1 | x2
         yk = y1 | y2
-        # if move == 'n':
+        # if move == Index(1):
         sumph = foo(n-1, xk, yk)
         # else:
         #     sumph = foo(n-k, xk, yk)
@@ -182,17 +182,17 @@ def inductcase(spec, database, dir,  pre=None, base=1, k=1):
     start = time.time()
     size = lambda x: k*x
     gi = None
-    move = 'n' if k==3 else 0
+
     # Add gate no need for base case
     if k==1:
-        database += [HN("Hn", ['n'])] 
+        database += [HN("Hn", [Index(1)])] 
     if k==3:
-        database += [tele('tele', ['n', '2n', '3n'])]    
+        database += [tele('tele', [Index(1), Index(2), Index(3)])]    
     if k>1:
-        # database = [Xmaj("xmaj",[0,1,'n+1']), Xuma("xuma", [0,1,'n+1'])]
-        database=[Toffolin("toff", ['n', '2*n-1', '2*n']),Fredkin("fredkin", [0,1,'n+1']), Peres("peres",[0,1,'n+1']), CCX_N("ccxn"), Xmaj("xmaj",[0,1,'n+1']), Xuma("xuma", [0,1,'n+1'])] + database
+        # database = [Xmaj("xmaj",[0,1,Index(1,1)]), Xuma("xuma", [0,1,Index(1,1)])]
+        database=[Toffolin("toff", [Index(1), Index(2,-1), Index(2)]),MAJ("maj", [0,1,Index(1,1)]), UMA("uma",[0,1,Index(1,1)]), CCX_N("ccxn"), Xmaj("xmaj",[0,1,Index(1,1)]), Xuma("xuma", [0,1,Index(1,1)])] + database
 
-    # comp = ([Xn("X", "n+1"), Fredkin("fredkin", [0,1,'n+1'])], [Peres("peres",[0,1,'n+1']), Xn("X", "n+1")])
+    # comp = ([Xn("X", "n+1"), Fredkin("fredkin", [0,1,Index(1,1)])], [Peres("peres",[0,1,Index(1,1)]), Xn("X", "n+1")])
     if dir == 'both':  
         for leftone in database:
             for rightone in database:
@@ -209,7 +209,7 @@ def inductcase(spec, database, dir,  pre=None, base=1, k=1):
         c=0
         if item.name=='sub':
             c = item.params['c']
-            compon = ([Subtractor('sub', [0,1,'n'], params={'c':c}), Cadder('cadd', [0,1,'n'], params={'c':c}), X('x', registers=['n+7'])], [Ident('I')])
+            compon = ([Subtractor('sub', [0,1,Index(1)], params={'c':c}), Cadder('cadd', [0,1,Index(1)], params={'c':c}), X('x', registers=['n+7'])], [Ident('I')])
             size = lambda n : n + 2*c
         ri = verifyInduct(compon, spec, pre, dir, k, base, size)
 
@@ -230,7 +230,7 @@ def success(gb,gi):
     return True
 
 def synthesis(amplitude, gateset,  hypothesis=lambda n,x,y:True, base=1):
-    for dir in ['right','left', 'both',]:
+    for dir in ['right','both','left', ]:
         for depth in range(1,4):
             gb,gi = search(amplitude,gateset, dir, hypothesis, k=depth, base=base)
             if success(gb,gi):

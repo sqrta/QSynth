@@ -39,7 +39,7 @@ def newRipSub(n,x,y):
     return getSpec(y, intervals, Output)
 
 
-def rippleAdderSpec(n,x,y):
+def cAdderSpec(n,x,y):
     Eq1 = Equal(BVtrunc(x, n, 0), BVtrunc(y, n, 0))
     add = BVtrunc(x, n, 1) + BVtrunc(x,2*n,n+1) + BVref(x,0)
     result = BVtrunc(y, 2*n, n + 1)
@@ -93,20 +93,27 @@ if __name__ == "__main__":
     print(f'ToffoliN case uses {end-start}s')
     filewrite(prog.toQiskit('ToffoliN'), 'ToffoliN.py')
 
-    # start = time.time()
-    # spec = PPSA(beta=lambda n: 1, phaseSum=newRipAdd)
-    # prog = synthesis(spec, StandardGateSet, hypothesis =lambda n,x,y : BVref(x,0)==0)
-    # end =time.time()
-    # print(f'RippleAdder case uses {end-start}s')
-    # filewrite(prog.toQiskit('RippleAdder'), 'RippleAdder.py')
 
-    # start = time.time()
-    # spec = PPSA(beta=lambda n: 1, phaseSum=newRipSub)
-    # prog = synthesis(spec, StandardGateSet, hypothesis =lambda n,x,y : BVref(x,0)==0)
-    # end =time.time()
-    # print(f'RippleSubtractor case uses {end-start}s')
-    # filewrite(prog.toQiskit('RippleSubtractor'), 'RippleSubtractor.py')
-    # exit(0)
+    start = time.time()
+    spec = PPSA(beta=lambda n: 1, phaseSum=cAdderSpec)
+    prog = synthesis(spec, StandardGateSet, hypothesis =lambda n,x,y : BVref(x,0)==0)
+    end =time.time()
+    print(f'Cond-Adder case uses {end-start}s')
+    filewrite(prog.toQiskit('CondAdder', offset=2), 'CondAdder.py')
+
+    start = time.time()
+    spec = PPSA(beta=lambda n: 1, phaseSum=newRipAdd)
+    prog = synthesis(spec, StandardGateSet, hypothesis =lambda n,x,y : BVref(x,0)==0)
+    end =time.time()
+    print(f'RippleAdder case uses {end-start}s')
+    filewrite(prog.toQiskit('RippleAdder'), 'RippleAdder.py')
+
+    start = time.time()
+    spec = PPSA(beta=lambda n: 1, phaseSum=newRipSub)
+    prog = synthesis(spec, StandardGateSet, hypothesis =lambda n,x,y : BVref(x,0)==0)
+    end =time.time()
+    print(f'RippleSubtractor case uses {end-start}s')
+    filewrite(prog.toQiskit('RippleSubtractor'), 'RippleSubtractor.py')
 
     start = time.time()
     spec = PPSA(beta=lambda n: 1, phaseSum=Uniform)
@@ -146,8 +153,6 @@ if __name__ == "__main__":
     print(f'inversion case uses {end-start}s')
     filewrite(prog.toQiskit('inversion'), 'Inversion.py')  
 
-
-
     start = time.time()
     spec = PPSA(beta=lambda n: 1, phaseSum=newFullAdd)
     prog = synthesis(spec, StandardGateSet, hypothesis = lambda n,x,y : And(BVref(x,0)==0))
@@ -162,10 +167,4 @@ if __name__ == "__main__":
     print(f'QFT case uses {end-start}s')
     filewrite(prog.toQiskit('QFT'), 'QFT.py')
 
-    # start = time.time()
-    # spec = PPSA(beta=lambda n: 1, phaseSum=rippleAdderSpec)
-    # prog = synthesis(spec, StandardGateSet, hypothesis =lambda n,x,y : BVref(x,0)==0)
-    # end =time.time()
-    # print(f'RippleAdder case uses {end-start}s')
-    # filewrite(prog.toQiskit('RippleAdder'), 'RippleAdder.py')
 
