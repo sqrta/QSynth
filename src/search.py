@@ -106,7 +106,7 @@ def verifyInduct(compon, spec, pre, dir, k=1, move=1, size=lambda x: x):
     x, y, n = BitVecs('x y n', MAXL)
     # x = BVtrunc(xo, 2*n)
     # y = BVtrunc(yo, 2*n)
-
+    # print(compon[0][0].name,compon[1][0].name)
     start = time.time()
     precondition = pre(n, x, y) if pre else True
     left = inductk(spec, 0, n, x, y).z3exp()
@@ -187,10 +187,9 @@ def inductcase(spec, database, dir,  pre=None, base=1, k=1):
     if k==1:
         database += [HN("Hn", [Index(1)])] 
     if k==3:
-        database += [tele('tele', [Index(1), Index(2), Index(3)])]    
+        database = [tele('tele', [Index(1), Index(2), Index(3)]), CCX_N("ccxn"),] +database   
     if k>1:
-        # database = [Xmaj("xmaj",[0,1,Index(1,1)]), Xuma("xuma", [0,1,Index(1,1)])]
-        database=[Toffolin("toff", [Index(1), Index(2,-1), Index(2)]),MAJ("maj", [0,1,Index(1,1)]), UMA("uma",[0,1,Index(1,1)]), CCX_N("ccxn"), Xmaj("xmaj",[0,1,Index(1,1)]), Xuma("xuma", [0,1,Index(1,1)])] + database
+        database=[Toffolin("toff", [Index(1), Index(2,-1), Index(2)]),MAJ("maj", [0,1,Index(1,1)]), UMA("uma",[0,1,Index(1,1)]),  Xmaj("xmaj",[0,1,Index(1,1)]), Xuma("xuma", [0,1,Index(1,1)])] + database
 
     # comp = ([Xn("X", "n+1"), Fredkin("fredkin", [0,1,Index(1,1)])], [Peres("peres",[0,1,Index(1,1)]), Xn("X", "n+1")])
     if dir == 'both':  
@@ -230,8 +229,8 @@ def success(gb,gi):
     return True
 
 def synthesis(amplitude, gateset,  hypothesis=lambda n,x,y:True, base=1):
-    for dir in ['right','both','left', ]:
-        for depth in range(1,4):
+    for depth in range(1,4):
+        for dir in ['right','both','left',]:   
             gb,gi = search(amplitude,gateset, dir, hypothesis, k=depth, base=base)
             if success(gb,gi):
                 return ISQIR({'base':gb, 'inductive':gi}, k= depth)

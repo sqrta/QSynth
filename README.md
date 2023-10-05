@@ -1,6 +1,6 @@
 # Synthesis
 
-This framework is based on the paper **Syntax-guided Synthesis of Quantum Unitary Programs** [here](document/QSynth.pdf)
+This framework is based on the paper **A Case for Synthesis of Recursive Quantum Unitary Programs** [here](document/QSynth.pdf)
 
 ## Install
 This framework is based on z3py, you can install it by

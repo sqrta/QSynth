@@ -3,7 +3,7 @@ from functools import reduce
 from z3 import *
 
 MAXL = 16
-SPACE = 10
+SPACE = 8
 ORACLEL = 2**SPACE
 
 def z3Show(s):

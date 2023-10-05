@@ -101,7 +101,8 @@ class Index:
     def __str__(self) -> str:
         result = "n"
         if self.slope>1:
-            result = f"{self.slope-1}*N{'-' if self.rev else '+'}"+result
+            tmp = "N" if self.slope==2 else f"{self.slope-1}*N"
+            result = tmp + f"{'-' if self.rev else '+'}"+result
         if self.offset>0:
             result += f"+{self.offset}"
         elif self.offset<0:
@@ -218,9 +219,11 @@ def qiskitbackend(base, left=None, right=None, name="foo", spec=1, offset=1):
         prog += "\t\tif(n==" + str(i) + "):\n"
         prog += gatelist(base[i], 3)
     prog += f"\t\telse:\n"
-    prog += gatelist(flatten(left, offset), 3)
+    if not (len(left)==1 and left[0].name=="I"):
+        prog += gatelist(flatten(left, offset), 3)
     prog += f"{ntab(3)}S(circ,n-1)\n"
-    prog += gatelist(flatten(right, offset), 3)
+    if not (len(right)==1 and right[0].name=="I"):
+        prog += gatelist(flatten(right, offset), 3)
     prog+="\tS(circuit,N)\n\treturn circuit\n\n"
     return prog
 
@@ -243,19 +246,20 @@ class ISQIR:
         self.name = name
         self.k=k
 
-    def toQiskit(self, name=None, offset=1):
+    def toQiskit(self, name=None, offset=1, head=True):
         if name == None:
             name = self.name
-            
-        result = "from qiskit import QuantumCircuit\n"
-        result += "from math import pi\n\n"
+        result=""
+        if head:
+            result = "from qiskit import QuantumCircuit\n"
+            result += "from math import pi\n\n"
         for gate in self.gb:
             if gate.claim():
-                result += gate.prog().toQiskit()
+                result += gate.prog().toQiskit(head=False)
         for gates in self.gi:
             for gate in gates:
                 if gate.claim():
-                    result += gate.prog().toQiskit()
+                    result += gate.prog().toQiskit(head=False)
                 # print('here',result)
         return result + showProg(self.gb, self.gi, name, self.k, "qiskit", offset)
 
