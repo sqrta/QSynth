@@ -35,7 +35,7 @@ To produce the first column of Table 3 and synthesize the example programs in th
 ```
 python3 src/main.py
 ```
-This procedure needs 15~30 minutes to complete. Ten result program files: `Uniform.py`,`GHZ.py`, `FullAdder.py`, `RippleAdder.py`, `RippleSubtractor.py`, `CondAdder.py`,`ToffoliN.py`, `QFT.py`, `inversion.py` and `Teleportation.py` will be synthesized in the root folder. They are Qiskit functions that can generate the corresponding circuits. This will also print the synthesis time for all cases. 
+This procedure needs 15~30 minutes to complete. Ten result program files: `Uniform.py`,`GHZ.py`, `FullAdder.py`, `RippleAdder.py`, `RippleSubtractor.py`, `CondAdder.py`,`ToffoliN.py`, `QFT.py`, `Inversion.py` and `Teleportation.py` will be synthesized in the root folder. They are Qiskit functions that can generate the corresponding circuits. This will also print the synthesis time for all cases. 
 The example programs appeared in the paper are:
 
 - Fig 5(c) == `GHZ.py`
@@ -43,7 +43,7 @@ The example programs appeared in the paper are:
 - Fig 10(b) == `RippleAdder.py`
 - Fig 11 == `RippleSubtractor.py`
 - Fig 12 == `CondAdder.py`
-- Fig 15 == `inversion.py`
+- Fig 15 == `Inversion.py`
 - Fig 17~18 == `QFT.py`
 - Fig 19 == `Teleportation.py`
 

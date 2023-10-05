@@ -34,9 +34,15 @@ class component:
     
     def claim(self):
         return False
+    
+    def source(self):
+        return None
 
     def prog(self):
         return None
+    
+    def call(self):
+        return None,None
 
     def Mx(self, n, x):
         raise(self.name+" does not have Mx")
@@ -102,7 +108,12 @@ class CRZN(component):
         return True
 
     def prog(self):
-        return ISQIR({'base':[HN('h', [Index(1)])], 'inductive':([Ident('I')],[CRZ0N('cp', ['pi/2**n', Index(2, rev=True), Index(1)])])}, name='Zn')
+        return ISQIR({'base':[HN('h', [Index(1)])], 'inductive':([Ident('I')],[CRZ0N('cp', ['pi/2**n', Index(2, rev=True), Index(0)])])}, name='Zn')
+    
+    def call(self):
+        size = Index(1)
+        arg = f"range({Index(1,1)})"
+        return size,arg
 
 
 class Swap(component):
@@ -424,6 +435,22 @@ class Subtractor(component):
         add = BVtrunc(y,2*c+n-1,n+c) + BVtrunc(y, c, 1) + BVref(y,0)
         return [setVec(y,add,2*c+n-1,n+c)]
 
+    def claim(self):
+        return True
+    
+    def qiskitName(self):
+        c = self.params["c"]
+        return f"RippleSubtractor"
+    
+    def source(self):
+        return "from RippleSubtractor import RippleSubtractor\n"
+    
+    def call(self):
+        size = self.params["c"]-1
+
+        arg = f"list(range(0, {size+1}))+list(range({Index(0)}+{size}, {Index(0)}+{2*size}))"
+        return size, arg
+
 class Cadder(component):
     def alpha(self, n, x, y):
         c = self.params["c"]
@@ -443,8 +470,22 @@ class Cadder(component):
     def My(self, n, y):
         c = self.params["c"]
         ctrl = BVref(y,2*c+n-1)
-        add =  BVtrunc(y,2*c+n-2,n+c) - ctrl*BVtrunc(y, c-1, 1) - BVref(x,0)
+        add =  BVtrunc(y,2*c+n-2,n+c) - ctrl*BVtrunc(y, c-1, 1) - BVref(y,0)
         return [setVec(y,add,2*c+n-2,n+c)]
+    
+    def claim(self):
+        return True
+    
+    def qiskitName(self):
+        return f"CondAdder"
+    
+    def call(self):
+        size = self.params["c"]-1
+        arg = f"list(range(0, {size+1}))+list(range({Index(0)}+{size}, {Index(0)}+{2*size+1}))"
+        return size, arg
+    
+    def source(self):
+        return "from CondAdder import CondAdder\n"
     
 
 
@@ -458,7 +499,7 @@ def setbit(x, qubits):
         result.append(xtmp)
     return result
 
-StandardGateSet = [Ident('I', ['0']), H0("H", ['0']), CRZN("Zn", [Index(1)]), CNOT('cx', [0,1]), Toffoli('ccx', [0,1,2]),  Swap('swap', [0,1]), X('x', [0])]
+StandardGateSet = [H0("H", ['0']), CRZN("Zn", [Index(1)]), CNOT('cx', [0,1]), Toffoli('ccx', [0,1,2]),  Swap('swap', [0,1]), X('x', [0])]
 
 
 if __name__ == "__main__":

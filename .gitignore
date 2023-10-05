@@ -6,3 +6,4 @@ src/FullAdder.py
 src/RippleAdder.py
 src/GHZ.py
 document/oracle*
+src/matrix/

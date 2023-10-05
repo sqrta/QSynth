@@ -149,7 +149,7 @@ if __name__ == "__main__":
     prog = synthesis(spec, GateSet, hypothesis = lambda n,x,y : And(n>0,BVtrunc(x,2*c+n-1,c)==(bv(1)<<(c+n))))
     end =time.time()
     print(f'inversion case uses {end-start}s')
-    filewrite(prog.toQiskit('inversion'), 'Inversion.py')      
+    filewrite(prog.toQiskit('inversion', offset=2*c), 'Inversion.py')      
 
     start = time.time()
     spec = PPSA(beta=lambda n: 1, phaseSum=teleportation)

@@ -234,7 +234,7 @@ def synthesis(amplitude, gateset,  hypothesis=lambda n,x,y:True, base=1):
             gb,gi = search(amplitude,gateset, dir, hypothesis, k=depth, base=base)
             if success(gb,gi):
                 return ISQIR({'base':gb, 'inductive':gi}, k= depth)
-                
+    print("QSynth does not find a solution program")
     return ISQIR({'base':None, 'inductive':None}, k=1)
 
 

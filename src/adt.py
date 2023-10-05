@@ -103,6 +103,8 @@ class Index:
         if self.slope>1:
             tmp = "N" if self.slope==2 else f"{self.slope-1}*N"
             result = tmp + f"{'-' if self.rev else '+'}"+result
+        elif self.slope==0:
+            result = "N"
         if self.offset>0:
             result += f"+{self.offset}"
         elif self.offset<0:
@@ -189,7 +191,8 @@ def qiskitbackend(base, left=None, right=None, name="foo", spec=1, offset=1):
 
     def circCall(ins, circ="circ"):
         if ins.claim():
-            return f"{circ}.append({qiskitName(ins)})"
+            size, arg = ins.call()
+            return f"{circ}.append({ins.qiskitName()}({size}), {arg})"
         else:
             return circ+"." + qiskitName(ins)
 
@@ -249,19 +252,30 @@ class ISQIR:
     def toQiskit(self, name=None, offset=1, head=True):
         if name == None:
             name = self.name
+        if not self.gb or not self.gi:
+            raise ValueError('The prog is not a valid program')
         result=""
         if head:
             result = "from qiskit import QuantumCircuit\n"
             result += "from math import pi\n\n"
         for gate in self.gb:
             if gate.claim():
-                result += gate.prog().toQiskit(head=False)
+                source = gate.source()
+                if not source:
+                    result += gate.prog().toQiskit(head=False)
+                else:
+                    result += source
         for gates in self.gi:
             for gate in gates:
                 if gate.claim():
-                    result += gate.prog().toQiskit(head=False)
+                    source = gate.source()
+                    if not source:
+                        result += gate.prog().toQiskit(head=False)
+                    else:
+                        result += source
                 # print('here',result)
         return result + showProg(self.gb, self.gi, name, self.k, "qiskit", offset)
+
 
 class PPSA:
     def __init__(self, beta, phaseSum) -> None:
