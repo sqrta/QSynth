@@ -1,6 +1,6 @@
 # QSynth
 
-This is repository for implementation of paper "**A Case for Synthesis of Recursive Quantum Unitary Programs**". It is based on Python3.8
+This is repository for implementation of paper "**A Case for Synthesis of Recursive Quantum Unitary Programs**". It is based on Python3.8. All commands in this document are runned in the root folder (e.g. `QSynth`)
 
 ## Setup
 
@@ -25,11 +25,11 @@ GHZ case uses 0.2749965190887451s
 
 ## List of claims
 
-- We present QSynth, the first recursive quantum program synthesis framework. We evaluate QSynth with a benchmark of 10 quantum programs, and show that QSynth is able to synthesize practical recursive quantum programs in a reasonable time. (The first column of Table 3)
+- We present QSynth, the first recursive quantum program synthesis framework. We evaluate QSynth with a benchmark of 10 quantum programs, and show that QSynth is able to synthesize practical recursive quantum programs in a reasonable time. The first column of Table 
 - QSynth successfully captures the inductive structure of the targeting problem and produces better
 programs than human-written programs in Qiskit. (Fig.14)
 
-### Reproduce The result
+## Reproduce The result
   
 To produce the first column of Table 3 and synthesize the example programs in the paper, run the command
 ```
@@ -52,3 +52,61 @@ After generating the example programs, run the command below to reproduce the re
 ```
 python3 evaluateGate.py
 ```
+
+## Run QFast and Qsyn
+
+In Table 3 we demonstrate that QFast and Qsyn, two circuit synthesizers can only synthesize fixed-size quantum circuits and cannot handle cases for >= 6 qubits in a reasonable time.
+
+### QFast Setup
+
+Run the command below to setup Qfast
+```
+pip install qfast
+```
+Run the following command to test that QFast is successfully installed. It needs about 17s.
+```
+cd qfast
+python3 -m qfast qfast/examples/GHZ4.unitary output.qasm
+cd ../
+```
+
+### Qsyn Setup
+
+Run the following command to setup Qsyn
+
+```
+pip3 install -r qsyn/requirements.txt
+```
+
+ Run the command below to generate the specifications of QFast and Qsyn from the ten programs synthesized by QSynth
+
+```
+cd qsyn
+python3 qsyn/run_single.py --benchmark GHZ3  --mode Ours
+cd ../
+```
+
+### Test QFast and Qsyn for 6-qubit circuits
+
+Run the following command to generate the specifications of the ten programs synthesized by QSynth for QFast and Qsyn
+
+```
+python3 get_spec.py
+```
+
+Specifications for QFast and Qsyn will be generated in the folder `qfast/examples` and `qsyn/benchmarks`.
+Try to synthesize each benchmark with QFast and Qsyn with the following command respectively:
+```
+cd qfast
+python3 -m qfast qfast/examples/[Benchmark].unitary output.qasm
+```
+```
+cd qsyn
+python3 qsyn/run_single.py --benchmark [Benchmark]  --mode Ours
+```
+`[Benchmark]` is one of following items
+```
+Inversion, GHZ, CondAdder, FullAdder, QFT, Uniform , RippleAdder, RippleSubtractor, ToffoliN, Teleportation
+```
+
+None of these benchmark can be synthesized by QFast or Qsyn within one hour. This step is to test that QFast and Qsyn are not scalable when the circuit size >=6.

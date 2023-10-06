@@ -142,14 +142,12 @@ if __name__ == "__main__":
     print(f'QFT case uses {end-start}s')
     filewrite(prog.toQiskit('QFT'), 'QFT.py')  
     
-    # Insert the c-qubit subtractor and conditional adder into the gateset
-    GateSet = [Subtractor('sub', params={'c':c}), Cadder('c-add', params={'c':c})] + StandardGateSet
     start = time.time()
     spec = PPSA(beta=lambda n: 1, phaseSum=inversionSpec)
-    prog = synthesis(spec, GateSet, hypothesis = lambda n,x,y : And(n>0,BVtrunc(x,2*c+n-1,c)==(bv(1)<<(c+n))))
+    prog = synthesis(spec, StandardGateSet, hypothesis = lambda n,x,y : And(n>0,BVtrunc(x,2*c+n-1,c)==(bv(1)<<(c+n))))
     end =time.time()
     print(f'inversion case uses {end-start}s')
-    filewrite(prog.toQiskit('inversion', offset=2*c), 'Inversion.py')      
+    filewrite(prog.toQiskit('Inversion', offset=2*c), 'Inversion.py')      
 
     start = time.time()
     spec = PPSA(beta=lambda n: 1, phaseSum=teleportation)

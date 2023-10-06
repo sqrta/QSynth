@@ -182,6 +182,11 @@ def showProg(base, gi, name="foo", inductExp=1, backend="sqir", offset=1):
         prog += "}"
     return prog
 
+def pack(left, right):
+    l = left if isinstance(left,list) else [left]
+    r = right if isinstance(right, list) else [right]
+    return (l,r)
+
 def qiskitbackend(base, left=None, right=None, name="foo", spec=1, offset=1):
     prog = ""
     def qiskitName(ins):

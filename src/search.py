@@ -6,6 +6,7 @@ from z3tool import *
 import time
 import copy
 
+c=4
 
 def basek(foo, intk, n, x, y, size=lambda x: x):
     if intk < 0:
@@ -104,8 +105,6 @@ def verifyBase(compon, spec, pre, k, size):
 
 def verifyInduct(compon, spec, pre, dir, k=1, move=1, size=lambda x: x):
     x, y, n = BitVecs('x y n', MAXL)
-    # x = BVtrunc(xo, 2*n)
-    # y = BVtrunc(yo, 2*n)
     # print(compon[0][0].name,compon[1][0].name)
     start = time.time()
     precondition = pre(n, x, y) if pre else True
@@ -152,6 +151,7 @@ def verifyInduct(compon, spec, pre, dir, k=1, move=1, size=lambda x: x):
         return sat
     else:
         '''
+        # print debug message
         if rightcompon[0].name == "toff" and k==2:
             print(s.model())
             bvprint(s.model(), x, 'x')       
@@ -178,24 +178,19 @@ def verifyInduct(compon, spec, pre, dir, k=1, move=1, size=lambda x: x):
         '''
         return unsat
 
-def inductcase(spec, database, dir,  pre=None, base=1, k=1):
+def inductcase(spec, gateSet, dir,  pre=None, base=1, k=1):
     start = time.time()
     size = lambda x: k*x
     gi = None
+    database = gateSet
 
-    # Add gate no need for base case
-    if k==1:
-        database += [HN("Hn", [Index(1)])] 
-    if k==3:
-        database = [tele('tele', [Index(1), Index(2), Index(3)]), CCX_N("ccxn"),] +database   
-    if k>1:
-        database=[Toffolin("toff", [Index(1), Index(2,-1), Index(2)]),MAJ("maj", [0,1,Index(1,1)]), UMA("uma",[0,1,Index(1,1)]),  Xmaj("xmaj",[0,1,Index(1,1)]), Xuma("xuma", [0,1,Index(1,1)])] + database
+    # Add gate no need for base case and predefined modules
+    database=[[Subtractor('sub', [0,1,Index(1)], params={'c':c}), Cadder('cadd', [0,1,Index(1)], params={'c':c}), X('x', registers=['n+7'])], tele('tele', [Index(1), Index(2), Index(3)]), CCX_N("ccxn"),Toffolin("toff", [Index(1), Index(2,-1), Index(2)]),MAJ("maj", [0,1,Index(1,1)]), UMA("uma",[0,1,Index(1,1)]),  Xmaj("xmaj",[0,1,Index(1,1)]), Xuma("xuma", [0,1,Index(1,1)]),HN("Hn", [Index(1)])] + database
 
-    # comp = ([Xn("X", "n+1"), Fredkin("fredkin", [0,1,Index(1,1)])], [Peres("peres",[0,1,Index(1,1)]), Xn("X", "n+1")])
     if dir == 'both':  
         for leftone in database:
             for rightone in database:
-                compon = ([leftone], [rightone])
+                compon = pack(leftone, rightone)
                 
                 ri = verifyInduct(compon, spec, pre, dir, k, base, size)
                 if ri==sat:
@@ -204,12 +199,8 @@ def inductcase(spec, database, dir,  pre=None, base=1, k=1):
         return None
     for item in database:
         #compon = (invert, [Ident('I')])
-        compon = ([Ident('I')],[item]) if dir == "right" else ([item],[Ident('I')])
-        c=0
-        if item.name=='sub':
-            c = item.params['c']
-            compon = ([Subtractor('sub', [0,1,Index(1)], params={'c':c}), Cadder('cadd', [0,1,Index(1)], params={'c':c}), X('x', registers=['n+7'])], [Ident('I')])
-            size = lambda n : n + 2*c
+        compon = pack(Ident('I'),item) if dir == "right" else pack(item,Ident('I'))
+
         ri = verifyInduct(compon, spec, pre, dir, k, base, size)
 
         if ri == sat:
@@ -230,7 +221,7 @@ def success(gb,gi):
 
 def synthesis(amplitude, gateset,  hypothesis=lambda n,x,y:True, base=1):
     for depth in range(1,4):
-        for dir in ['right','both','left',]:   
+        for dir in ['left','right','both',]:   
             gb,gi = search(amplitude,gateset, dir, hypothesis, k=depth, base=base)
             if success(gb,gi):
                 return ISQIR({'base':gb, 'inductive':gi}, k= depth)
@@ -301,7 +292,8 @@ def search(specification, database, dir,  pre=None, base=1, k=1, offset=0):
     start = time.time()
     for i in range(base):
         tmp = None
-        for item in database:
+        gateset = [Ident('I', [0])] + database
+        for item in gateset:
             rb = verifyBase(item, spec, pre, i, size)
             # print("base", rb,item.name)
             if rb == sat:
