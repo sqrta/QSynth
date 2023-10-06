@@ -110,3 +110,13 @@ Inversion, GHZ, CondAdder, FullAdder, QFT, Uniform , RippleAdder, RippleSubtract
 ```
 
 None of these benchmark can be synthesized by QFast or Qsyn within one hour. This step is to test that QFast and Qsyn are not scalable when the circuit size >=6.
+
+## File Structure
+
+The source code is located in `src` and is structured as follows:
+
+- `main`: Specification and synthesis procedure of the example programs in the paper
+- `z3tool`: Useful z3py solver interface.
+- `adt.py`: Abstract data structure for PPSA functions and other program tools
+- `search`: Enumerative search.
+- `component`: Predefined quantum gates and modules.

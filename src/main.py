@@ -154,4 +154,4 @@ if __name__ == "__main__":
     prog = synthesis(spec, StandardGateSet, hypothesis =lambda n,x,y : And(BVtrunc(x,3*n, n+1)==0, n>1))
     end =time.time()
     print(f'Teleportation case uses {end-start}s')
-    filewrite(prog.toQiskit('Teleporation'), 'Teleporation.py')
+    filewrite(prog.toQiskit('Teleportation'), 'Teleportation.py')
