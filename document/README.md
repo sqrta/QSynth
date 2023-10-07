@@ -66,9 +66,10 @@ pip install qfast
 Run the following command to test that QFast is successfully installed. It needs about 17s.
 ```
 cd qfast
-python3 -m qfast qfast/examples/GHZ4.unitary output.qasm
+python3 -m qfast examples/GHZ4.unitary output.qasm
 cd ../
 ```
+qfast will generate the corresponding `output.qasm` program if it is correctly installed.
 
 ### Qsyn Setup
 
@@ -77,14 +78,13 @@ Run the following command to setup Qsyn
 ```
 pip3 install -r qsyn/requirements.txt
 ```
-
- Run the command below to generate the specifications of QFast and Qsyn from the ten programs synthesized by QSynth
-
+Run the following command to test that QFast is successfully installed
 ```
 cd qsyn
 python3 qsyn/run_single.py --benchmark GHZ3  --mode Ours
 cd ../
 ```
+Qsyn will print out the result circuit if it is correctly installed.
 
 ### Test QFast and Qsyn for 6-qubit circuits
 
@@ -98,7 +98,7 @@ Specifications for QFast and Qsyn will be generated in the folder `qfast/example
 Try to synthesize each benchmark with QFast and Qsyn with the following command respectively:
 ```
 cd qfast
-python3 -m qfast qfast/examples/[Benchmark].unitary output.qasm
+python3 -m qfast examples/[Benchmark].unitary output.qasm
 ```
 ```
 cd qsyn
