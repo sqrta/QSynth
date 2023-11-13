@@ -221,7 +221,7 @@ def success(gb,gi):
 
 def synthesis(amplitude, gateset,  hypothesis=lambda n,x,y:True, base=1):
     for depth in range(1,4):
-        for dir in ['left','right','both',]:   
+        for dir in ['right','left','both',]:   
             gb,gi = search(amplitude,gateset, dir, hypothesis, k=depth, base=base)
             if success(gb,gi):
                 return ISQIR({'base':gb, 'inductive':gi}, k= depth)

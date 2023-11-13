@@ -1,7 +1,7 @@
 
 import time
 from z3tool import *
-from qsynth import synthesis, StandardGateSet, PPSA, varDef, getSpec
+from qsynth import synthesis, StandardGateSet, PPSA, varDef, getSpec, SumVarClaim,SumExpr, OutputIndex
 from component import Subtractor,Cadder
 
 def QFTspec(n, x, y):
@@ -63,12 +63,20 @@ def inversionSpec(n,x,y):
     Eq2 = Equal(bv(1)<<(n-1), quet*lamb+r)
     return [(Eq1*Eq2, bv(0))]
 
-def teleportation(n,x,y):
+def alpha_teleportation(n,x,y):
     Eqbase = Equal(BVref(x,0), BVref(y,0))
     result = BVtrunc(x,n,1) ^ BVtrunc(y,3*n,2*n+1)
     Eq = Equal(result, BVtrunc(y,2*n,n+1))
-    phase = BVtrunc(x, n, 1)
+    phase = BVtrunc(y, n, 1)
     return [(Eqbase*Eq, phase)]
+
+def teleportation(n,x,y):
+    c0, phi, zero1, zero2, intervals = varDef(x, [1,n,n,n])
+    z = SumVarClaim(n,x,y, [1,3*n])
+    expr = SumExpr(BVtrunc(z, 2*n-1, n)==BVtrunc(phi,n-1) ^ BVtrunc(z,3*n-1,2*n), BVtrunc(z, n-1))
+    Output = [c0, expr]
+    intervals = OutputIndex([1, 3*n])
+    return getSpec(y, intervals, Output)
 
 # Toffoli gate with n+1 control qubits
 def toff_nPlus1(n,x,y):
@@ -85,6 +93,13 @@ def filewrite(string, path):
         f.write(string)
 
 if __name__ == "__main__":
+
+    start = time.time()
+    spec = PPSA(beta=lambda n: 1, phaseSum=teleportation)
+    prog = synthesis(spec, StandardGateSet, hypothesis =lambda n,x,y : And(BVtrunc(x,3*n, n+1)==0, n>1))
+    end =time.time()
+    print(f'Teleportation case uses {end-start}s')
+    filewrite(prog.toQiskit('Teleportation'), 'Teleportation.py')
 
     start = time.time()
     spec = PPSA(beta=lambda n: 2, phaseSum=GHZspec)
@@ -149,9 +164,3 @@ if __name__ == "__main__":
     print(f'inversion case uses {end-start}s')
     filewrite(prog.toQiskit('Inversion', offset=2*c), 'Inversion.py')      
 
-    start = time.time()
-    spec = PPSA(beta=lambda n: 1, phaseSum=teleportation)
-    prog = synthesis(spec, StandardGateSet, hypothesis =lambda n,x,y : And(BVtrunc(x,3*n, n+1)==0, n>1))
-    end =time.time()
-    print(f'Teleportation case uses {end-start}s')
-    filewrite(prog.toQiskit('Teleportation'), 'Teleportation.py')

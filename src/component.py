@@ -334,7 +334,7 @@ class tele(component):
         result = BVref(x,n) ^ BVref(y,3*n)
         Eq = Equal(result, BVref(y,2*n))
         baseEq = Equal(BVtrunc(x, n-1, 0), BVtrunc(y,n-1, 0))*Equal(BVtrunc(x, 2*n-1, n+1), BVtrunc(y,2*n-1, n+1))*Equal(BVtrunc(x, 3*n-1, 2*n+1), BVtrunc(y,3*n-1, 2*n+1))
-        return getSumPhase([(baseEq*Eq, BVref(x,n)<<(n-1))])
+        return getSumPhase([(baseEq*Eq, BVref(y,n)<<(n-1))])
 
     def Mx(self, n, x):
         qubits = {n, 2*n, 3*n}
