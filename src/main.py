@@ -1,7 +1,7 @@
 
 import time
 from z3tool import *
-from qsynth import synthesis, StandardGateSet, PPSA, varDef, getSpec, SumVarClaim,SumExpr, OutputIndex
+from qsynth import synthesis, StandardGateSet, PPSA, Input, getSpec, SumVarClaim,SumExpr, OutputIndex
 from component import Subtractor,Cadder
 
 def QFTspec(n, x, y):
@@ -16,7 +16,7 @@ def FullAdderSpec(n,x,y):
     return [(Eq1*Eq2, bv(0))]
 
 def FullAddSpec(n,x,y):
-    c0, A, B, C, intervals = varDef(x, [1,n,n,n])
+    c0, A, B, C, intervals = Input(x, [1,n,n,n])
     sum = A+B+c0
     Output = [BVref(sum, n), A, B,  BVtrunc(sum, n-1)]
     return getSpec(y, intervals, Output)
@@ -29,12 +29,12 @@ def IDspec(n,x,y):
     return [(Equal(x,y), bv(0))]
 
 def RipAddSpec(n,x,y):
-    c0, A, B, intervals = varDef(x, [1,n,n])
+    c0, A, B, intervals = Input(x, [1,n,n])
     Output = [c0, A, A+B+c0]
     return getSpec(y, intervals, Output)
 
 def RipSubSpec(n,x,y):
-    c0, A, B, intervals = varDef(x, [1,n,n])
+    c0, A, B, intervals = Input(x, [1,n,n])
     Output = [c0, A, B-A-c0]
     return getSpec(y, intervals, Output)
 
@@ -44,13 +44,6 @@ def cAdderSpec(n,x,y):
     add = BVtrunc(x, n, 1) + BVtrunc(x,2*n,n+1) + BVref(x,0)
     result = BVtrunc(y, 2*n, n + 1)
     Eq2 = Equal(BVtrunc(add, n),  BVtrunc(result, n))
-    return [(Eq1*Eq2, bv(0))]
-
-def rippleSubtractSpec(n,x,y):
-    Eq1 = Equal(BVtrunc(x, n, 0), BVtrunc(y, n, 0))
-    add =  BVtrunc(x,2*n,n+1) - BVtrunc(x, n, 1) - BVref(x,0)
-    result = BVtrunc(y, 2*n, n + 1)
-    Eq2 = Equal(BVtrunc(add, n-1),  BVtrunc(result, n-1))
     return [(Eq1*Eq2, bv(0))]
 
 c = 4
@@ -63,15 +56,8 @@ def inversionSpec(n,x,y):
     Eq2 = Equal(bv(1)<<(n-1), quet*lamb+r)
     return [(Eq1*Eq2, bv(0))]
 
-def alpha_teleportation(n,x,y):
-    Eqbase = Equal(BVref(x,0), BVref(y,0))
-    result = BVtrunc(x,n,1) ^ BVtrunc(y,3*n,2*n+1)
-    Eq = Equal(result, BVtrunc(y,2*n,n+1))
-    phase = BVtrunc(y, n, 1)
-    return [(Eqbase*Eq, phase)]
-
 def teleportation(n,x,y):
-    c0, phi, zero1, zero2, intervals = varDef(x, [1,n,n,n])
+    c0, phi, zero1, zero2, intervals = Input(x, [1,n,n,n])
     z = SumVarClaim(n,x,y, [1,3*n])
     expr = SumExpr(BVtrunc(z, 2*n-1, n)==BVtrunc(phi,n-1) ^ BVtrunc(z,3*n-1,2*n), BVtrunc(z, n-1))
     Output = [c0, expr]
