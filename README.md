@@ -11,7 +11,7 @@ run the command below to reproduce the results in paper.
 ```
 python src/main.py
 ```
-Ten result program files: `Uniform.py`,`GHZ.py`, `FullAdder.py`, `RippleAdder.py`, `RippleSubtractor.py`, `CondAdder.py`,`ToffoliN.py`, `QFT.py`, `Inversion.py` and `Teleportation.py` will be synthesized in the root folder. They are Qiskit functions that can generate the corresponding circuits. This procedure needs 15~30 minutes to complete.
+All result program files will be synthesized in the root folder. They are Qiskit functions that can generate the corresponding circuits. This procedure needs 15~30 minutes to complete.
 
 ## Usage
 

@@ -38,14 +38,6 @@ def RipSubSpec(n,x,y):
     Output = [c0, A, B-A-c0]
     return getSpec(y, intervals, Output)
 
-
-def cAdderSpec(n,x,y):
-    Eq1 = Equal(BVtrunc(x, n, 0), BVtrunc(y, n, 0))
-    add = BVtrunc(x, n, 1) + BVtrunc(x,2*n,n+1) + BVref(x,0)
-    result = BVtrunc(y, 2*n, n + 1)
-    Eq2 = Equal(BVtrunc(add, n),  BVtrunc(result, n))
-    return [(Eq1*Eq2, bv(0))]
-
 c = 4
 
 def inversionSpec(n,x,y): 
@@ -121,13 +113,6 @@ if __name__ == "__main__":
     end =time.time()
     print(f'RippleSubtractor case uses {end-start}s')
     filewrite(prog.toQiskit('RippleSubtractor'), 'RippleSubtractor.py')
-
-    start = time.time()
-    spec = PPSA(beta=lambda n: 1, phaseSum=cAdderSpec)
-    prog = synthesis(spec, StandardGateSet, hypothesis =lambda n,x,y : BVref(x,0)==0)
-    end =time.time()
-    print(f'Cond-Adder case uses {end-start}s')
-    filewrite(prog.toQiskit('CondAdder', offset=2), 'CondAdder.py')
 
     start = time.time()
     spec = PPSA(beta=lambda n: 1, phaseSum=toff_nPlus1)
