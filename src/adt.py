@@ -79,6 +79,16 @@ def rightMultiAlpha(compon, alpha, n, x, y):
         terms.phases+=sumPhaseMulti(alpha(n, x, z),compon.alpha(n, z, y)).phases
     return terms
 
+def RecurPackRight(right, func0, n, x, y):
+    if len(right) == 1:
+        return rightMultiAlpha(right[0], func0, n, x, y)
+    return rightMultiAlpha(right[-1], lambda n,x,y: RecurPackRight(right[:-1], func0, n,x,y), n, x, y)
+
+def RecurPackLeft(left, func0, n, x, y):
+    if len(left) == 1:
+        return leftMultiAlpha(left[0], func0, n, x, y)
+    return rightMultiAlpha(left[-1], lambda n,x,y: RecurPackLeft(left[:-1], func0, n,x,y), n, x, y)
+
 class Spec:
     def __init__(self) -> None:
         self.args = {}

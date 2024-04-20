@@ -193,12 +193,11 @@ class HN(component):
         return sumPhase([phase(d0, bv(0)), phase(d1, BVref(x, n))])
 
     def My(self, n, y):
-        return [BVtrunc(y, n-1) | bv(0) << n,
-                BVtrunc(y, n-1) | bv(1) << n]
+        return self.Mx(n, y)
 
     def Mx(self, n, x):
-        return [BVtrunc(x, n-1) | bv(0) << n,
-                BVtrunc(x, n-1) | bv(1) << n]
+        qubits = {n}
+        return setbit(x, qubits)
 
     def qiskitName(self):
         return "h"
@@ -252,6 +251,30 @@ class CNOT(component):
 
     def decompose(self):
         return CNOT('cx', [Index(1,-1), Index(1)])
+    
+    def control(self, ctrl):
+        for index in self.registers:
+            index.addOffset(1)
+        return CNOT('ccx', [ctrl]+ self.registers)
+    
+class CNOT2(component):
+    def alpha(self, n, x, y):
+        Eq = Equal(BVtrunc(x, 2*n-1), BVtrunc(y, 2*n-1))
+        d0 = Eq*Equal(BVref(y, 2*n), BVref(y, n) ^ BVref(x, 2*n))
+        return sumPhase([phase(d0, bv(0))])
+
+    def Mx(self, n, x):
+        qubits = {2*n}
+        return setbit(x, qubits)
+
+    def My(self, n, y):
+        return self.Mx(n, y)
+
+    def qiskitName(self):
+        return self.name
+
+    def decompose(self):
+        return CNOT('cx', [Index(1), Index(2)])
     
     def control(self, ctrl):
         for index in self.registers:

@@ -19,7 +19,7 @@ def basek(foo, intk, n, x, y, size=lambda x: x):
     return sumPhase([phase(p[0], p[1]) for p in sumph])
 
 
-def inductk(foo, k, n, x, y, move=0, size=lambda x: x):
+def inductk(foo, k, n, x, y, move=0, size=lambda x: x,rev=False):
     if k < 0:
         return None
     if k == 0:
@@ -36,7 +36,7 @@ def inductk(foo, k, n, x, y, move=0, size=lambda x: x):
         indsumph = [phase(truncEq*p[0], p[1] << k) for p in sumph]
 
     elif k == 2:
-        if move == 1:
+        if rev:
             x1 = BVtrunc(x,n,1)
             x2 = BVtrunc(x, 2*n, n+2) <<n
             y1 = BVtrunc(y,n,1)
@@ -48,7 +48,7 @@ def inductk(foo, k, n, x, y, move=0, size=lambda x: x):
             x2 = BVtrunc(x, 2*n-1, n+1) << n          
             y1 = BVtrunc(y, n-1)
             y2 = BVtrunc(y, 2*n-1, n+1) << n
-            truncEq = Equal(BVref(x, n), BVref(y, n)) * Equal(BVref(x, 2*n), BVref(y, 2*n))            
+            truncEq = Equal(BVref(x, n), BVref(y, n)) * Equal(BVref(x, 2*n), BVref(y, 2*n))          
         xk = x1 | x2
         yk = y1 | y2
         # if move == Index(1):
@@ -103,7 +103,7 @@ def verifyBase(compon, spec, pre, k, size):
         return unsat
 
 
-def verifyInduct(compon, spec, pre, dir, k=1, move=1, size=lambda x: x):
+def verifyInduct(compon, spec, pre, dir, k=1, move=1, size=lambda x: x,rev=False):
     x, y, n = BitVecs('x y n', MAXL)
     # print(compon[0][0].name,compon[1][0].name)
     start = time.time()
@@ -111,7 +111,7 @@ def verifyInduct(compon, spec, pre, dir, k=1, move=1, size=lambda x: x):
     left = inductk(spec, 0, n, x, y).z3exp()
     leftcompon = compon[0][-1::-1]
     rightcompon = compon[1]
-    func0 = lambda n, x, y: inductk(spec, k, n, x, y, move)
+    func0 = lambda n, x, y: inductk(spec, k, n, x, y, move,rev=rev)
     # recall = lambda n, x, y: rightMultiAlpha(rightcompon, tmp, n, x, y)
     # print("length",len(compon[1]))
     funcs = {0:func0}
@@ -128,7 +128,8 @@ def verifyInduct(compon, spec, pre, dir, k=1, move=1, size=lambda x: x):
             return leftMultiAlpha(comp, lfuncs[j-1], n, x, y)
         lfuncs[i]= f 
     terms = lfuncs[len(leftcompon)](n,x,y)
-
+    if len(leftcompon)>1 or len(rightcompon) > 1:
+        terms = RecurPackLeft(leftcompon, lambda n,x,y: RecurPackRight(rightcompon, func0, n, x, y), n, x, y)
 
     right = terms.z3exp()
     rightDelta = terms.deltas()
@@ -178,21 +179,21 @@ def verifyInduct(compon, spec, pre, dir, k=1, move=1, size=lambda x: x):
         '''
         return unsat
 
-def inductcase(spec, gateSet, dir,  pre=None, base=1, k=1):
+def inductcase(spec, gateSet, dir,  pre=None, base=1, k=1,rev=False):
     start = time.time()
     size = lambda x: k*x
     gi = None
     database = gateSet
 
     # Add gate no need for base case and predefined modules
-    database=[[Subtractor('sub', [0,1,Index(1)], params={'c':c}), Cadder('cadd', [0,1,Index(1)], params={'c':c}), X('x', registers=['n+7'])], tele('tele', [Index(1), Index(2), Index(3)]), CCX_N("ccxn"),Toffolin("toff", [Index(1), Index(2,-1), Index(2)]),MAJ("maj", [0,1,Index(1,1)]), UMA("uma",[0,1,Index(1,1)]),  Xmaj("xmaj",[0,1,Index(1,1)]), Xuma("xuma", [0,1,Index(1,1)]),HN("Hn", [Index(1)])] + database
+    database=[[Subtractor('sub', [0,1,Index(1)], params={'c':c}), Cadder('cadd', [0,1,Index(1)], params={'c':c}), X('x', registers=['n+7'])],[HN("Hn", [Index(1)]), CNOT2('CNOT2')], tele('tele', [Index(1), Index(2), Index(3)]), CCX_N("ccxn"),Toffolin("toff", [Index(1), Index(2,-1), Index(2)]),MAJ("maj", [0,1,Index(1,1)]), UMA("uma",[0,1,Index(1,1)]),  Xmaj("xmaj",[0,1,Index(1,1)]), Xuma("xuma", [0,1,Index(1,1)]),HN("Hn", [Index(1)])] + database
 
     if dir == 'both':  
         for leftone in database:
             for rightone in database:
                 compon = pack(leftone, rightone)
                 
-                ri = verifyInduct(compon, spec, pre, dir, k, base, size)
+                ri = verifyInduct(compon, spec, pre, dir, k, base, size,rev=rev)
                 if ri==sat:
                     gi=compon
                     return gi
@@ -201,7 +202,7 @@ def inductcase(spec, gateSet, dir,  pre=None, base=1, k=1):
         #compon = (invert, [Ident('I')])
         compon = pack(Ident('I'),item) if dir == "right" else pack(item,Ident('I'))
 
-        ri = verifyInduct(compon, spec, pre, dir, k, base, size)
+        ri = verifyInduct(compon, spec, pre, dir, k, base, size,rev=rev)
 
         if ri == sat:
             gi = compon
@@ -220,11 +221,13 @@ def success(gb,gi):
     return True
 
 def synthesis(amplitude, gateset,  hypothesis=lambda n,x,y:True, base=1):
+
     for depth in range(1,4):
         for dir in ['right','left','both',]:   
-            gb,gi = search(amplitude,gateset, dir, hypothesis, k=depth, base=base)
-            if success(gb,gi):
-                return ISQIR({'base':gb, 'inductive':gi}, k= depth)
+            for rev in [False,True,]:
+                gb,gi = search(amplitude,gateset, dir, hypothesis, k=depth, base=base,rev=rev)
+                if success(gb,gi):
+                    return ISQIR({'base':gb, 'inductive':gi}, k= depth)
     print("QSynth does not find a solution program")
     return ISQIR({'base':None, 'inductive':None}, k=1)
 
@@ -285,7 +288,7 @@ def C_RZN(t, x, y, n, m):
 def C_RZ(y, t, n, m):
     return Equal(BVref(y, t), 1)*(BVref(y, t-n) << (m-n-1))
 
-def search(specification, database, dir,  pre=None, base=1, k=1, offset=0):
+def search(specification, database, dir,  pre=None, base=1, k=1, offset=0,rev=False):
     size = lambda x: k*x+offset
     gb = []
     spec = specification.phaseSum
@@ -303,7 +306,7 @@ def search(specification, database, dir,  pre=None, base=1, k=1, offset=0):
             gb.append(tmp)
         else:
             gb.append(component('None'))
-    gi = inductcase(spec, database, dir,  pre, k=k, base= base)
+    gi = inductcase(spec, database, dir,  pre, k=k, base= base,rev=rev)
     end = time.time()
     # print("Base step uses {0}s".format(end-start))
 

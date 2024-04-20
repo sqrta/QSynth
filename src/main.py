@@ -33,6 +33,11 @@ def RipAddSpec(n,x,y):
     Output = [c0, A, A+B+c0]
     return getSpec(y, intervals, Output)
 
+def stack_ww(n, x, y):
+    Eq0 = Equal(BVref(x,0), BVref(y,0))
+    Eq = Equal(BVtrunc(y, n, 1), BVtrunc(y, 2*n, n+1))
+    return [(Eq0*Eq, bv(0))]
+
 def RipSubSpec(n,x,y):
     c0, A, B, intervals = Input(x, [1,n,n])
     Output = [c0, A, B-A-c0]
@@ -73,11 +78,11 @@ def filewrite(string, path):
 if __name__ == "__main__":
 
     start = time.time()
-    spec = PPSA(beta=lambda n: 1, phaseSum=teleportation)
-    prog = synthesis(spec, StandardGateSet, hypothesis =lambda n,x,y : And(BVtrunc(x,3*n, n+1)==0, n>1))
+    spec = PPSA(beta=lambda n: 2<<n, phaseSum=stack_ww)
+    prog = synthesis(spec, StandardGateSet, hypothesis =lambda n,x,y : And(BVtrunc(x,2*n)==0, n>0))
     end =time.time()
-    print(f'Teleportation case uses {end-start}s')
-    filewrite(prog.toQiskit('Teleportation'), 'Teleportation.py')
+    print(f'stack_ww case uses {end-start}s')
+    filewrite(prog.toQiskit('stack_ww'), 'Stack_ww.py')
 
     start = time.time()
     spec = PPSA(beta=lambda n: 2, phaseSum=GHZspec)
@@ -85,6 +90,13 @@ if __name__ == "__main__":
     end =time.time()
     print(f'GHZ case uses {end-start}s')
     filewrite(prog.toQiskit('GHZ'), 'GHZ.py')
+
+    start = time.time()
+    spec = PPSA(beta=lambda n: 1, phaseSum=teleportation)
+    prog = synthesis(spec, StandardGateSet, hypothesis =lambda n,x,y : And(BVtrunc(x,3*n, n+1)==0, n>1))
+    end =time.time()
+    print(f'Teleportation case uses {end-start}s')
+    filewrite(prog.toQiskit('Teleportation'), 'Teleportation.py')
 
     start = time.time()
     spec = PPSA(beta=lambda n: 1, phaseSum=Uniform)
@@ -134,4 +146,5 @@ if __name__ == "__main__":
     end =time.time()
     print(f'inversion case uses {end-start}s')
     filewrite(prog.toQiskit('Inversion', offset=2*c), 'Inversion.py')      
+
 
