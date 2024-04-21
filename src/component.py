@@ -55,6 +55,9 @@ class component:
 
     def My(self, n, y):
         raise(self.name+" does not have My")
+    
+    def expandIndex(self):
+        return [self]
 
     def __str__(self) -> str:
         return self.name
@@ -144,6 +147,9 @@ class Toffolin(component):
     
     def My(self, n, y):
         return self.Mx(n, y)
+    
+    def expandIndex(self):
+        return [Toffolin("toff", [Index(1), Index(2,-1), Index(2)])]
 
     def qiskitName(self):
         return "ccx"
@@ -164,6 +170,9 @@ class Toffoli(component):
 
     def qiskitName(self):
         return "ccx"
+    
+    def expandIndex(self):
+        return [self, [Toffolin("toff", [Index(1), Index(2,-1), Index(2)])]]
 
 
 class H0(component):
@@ -183,6 +192,9 @@ class H0(component):
 
     def qiskitName(self):
         return "h"
+    
+    def expandIndex(self):
+        return [self, HN("Hn", [Index(1)])]
 
 
 class HN(component):
@@ -230,41 +242,47 @@ class X(component):
 
     def qiskitName(self):
         return "x"
+    
+    def expandIndex(self):
+        return [X('x', registers=['n+7'])]
 
 
+# class CNOT(component):
+#     def alpha(self, n, x, y):
+#         Eq = If(n >= 1, Equal(BVtrunc(x, n-1), BVtrunc(y, n-1)), bv(1))
+#         d0 = Eq*Equal(BVref(y, n), BVref(y, n-1) ^ BVref(x, n))
+#         return sumPhase([phase(d0, bv(0))])
+
+#     def Mx(self, n, x):
+#         return [BVtrunc(x, n-1),
+#                 BVtrunc(x, n-1) ^ (bv(1) << n)]
+
+#     def My(self, n, y):
+#         return [BVtrunc(y, n-1),
+#                 BVtrunc(y, n-1) ^ (bv(1) << n)]
+
+#     def qiskitName(self):
+#         return self.name
+
+#     def decompose(self):
+#         return CNOT('cx', [Index(1,-1), Index(1)])
+    
+#     def control(self, ctrl):
+#         for index in self.registers:
+#             index.addOffset(1)
+#         return CNOT('ccx', [ctrl]+ self.registers)
+    
 class CNOT(component):
     def alpha(self, n, x, y):
-        Eq = If(n >= 1, Equal(BVtrunc(x, n-1), BVtrunc(y, n-1)), bv(1))
-        d0 = Eq*Equal(BVref(y, n), BVref(y, n-1) ^ BVref(x, n))
+        targ = self.registers[1].value(n)
+        ctrl = self.registers[0].value(n)
+        Eq = Equal(BVtrunc(x, targ-1), BVtrunc(y, targ - 1))
+        d0 = Eq*Equal(BVref(y, targ), BVref(y, ctrl) ^ BVref(x, targ))
         return sumPhase([phase(d0, bv(0))])
 
     def Mx(self, n, x):
-        return [BVtrunc(x, n-1),
-                BVtrunc(x, n-1) ^ (bv(1) << n)]
-
-    def My(self, n, y):
-        return [BVtrunc(y, n-1),
-                BVtrunc(y, n-1) ^ (bv(1) << n)]
-
-    def qiskitName(self):
-        return self.name
-
-    def decompose(self):
-        return CNOT('cx', [Index(1,-1), Index(1)])
-    
-    def control(self, ctrl):
-        for index in self.registers:
-            index.addOffset(1)
-        return CNOT('ccx', [ctrl]+ self.registers)
-    
-class CNOT2(component):
-    def alpha(self, n, x, y):
-        Eq = Equal(BVtrunc(x, 2*n-1), BVtrunc(y, 2*n-1))
-        d0 = Eq*Equal(BVref(y, 2*n), BVref(y, n) ^ BVref(x, 2*n))
-        return sumPhase([phase(d0, bv(0))])
-
-    def Mx(self, n, x):
-        qubits = {2*n}
+        targ = self.registers[1].value(n)
+        qubits = {targ}
         return setbit(x, qubits)
 
     def My(self, n, y):
@@ -274,12 +292,15 @@ class CNOT2(component):
         return self.name
 
     def decompose(self):
-        return CNOT('cx', [Index(1), Index(2)])
+        return self
     
     def control(self, ctrl):
         for index in self.registers:
             index.addOffset(1)
         return CNOT('ccx', [ctrl]+ self.registers)
+    
+    def expandIndex(self):
+        return [CNOT('cx', [Index(1), Index(2)]), CNOT('cx', [Index(1, -1), Index(1)])]
 
 class Xmaj(component):
     def alpha(self, n, x, y):
@@ -405,6 +426,9 @@ class MAJ(component):
 
     def decompose(self):
         return [CNOT('cx', [Index(2,1,True),Index(3,1,True)]), CNOT('cx', [Index(2,1,True), Index(2,0,True)]), Toffoli('ccx', [Index(2,0,True), Index(3,1,True), Index(2,1,True)])]
+    
+    def expandIndex(self):
+        return [MAJ("maj", [0,1,Index(1,1)])]
 
 
 class UMA(component):
@@ -423,6 +447,9 @@ class UMA(component):
 
     def decompose(self):
         return [Toffoli('ccx', [Index(2,0,True), Index(3,1,True), Index(2,1,True)]),  CNOT('cx', [Index(2,1,True), Index(2,0,True)]), CNOT('cx', [Index(2,0,True), Index(3,1,True)])]
+    
+    def expandIndex(self):
+        return [UMA("uma",[0,1,Index(1,1)])]
 
 
 class Ident(component):
@@ -473,6 +500,9 @@ class Subtractor(component):
 
         arg = f"list(range(0, {size+1}))+list(range({Index(0)}+{size}, {Index(0)}+{2*size}))"
         return size, arg
+    
+    def expandIndex(self):
+        return [Subtractor('sub', [0,1,Index(1)], params={'c':self.params["c"]})]
 
 class Cadder(component):
     def alpha(self, n, x, y):
@@ -510,7 +540,8 @@ class Cadder(component):
     def source(self):
         return "from CondAdder import CondAdder\n"
     
-
+    def expandIndex(self):
+        return [Cadder('cadd', [0,1,Index(1)], params={'c':self.params["c"]})]
 
 def setbit(x, qubits):
     allset = allsubset(qubits)
@@ -522,7 +553,7 @@ def setbit(x, qubits):
         result.append(xtmp)
     return result
 
-StandardGateSet = [H0("H", ['0']), CRZN("Zn", [Index(1)]), CNOT('cx', [0,1]), Toffoli('ccx', [0,1,2]),  Swap('swap', [0,1]), X('x', [0])]
+StandardGateSet = [H0("H", ['0']),  CNOT('cx', [Index(1, -1), Index(1)]), Toffoli('ccx', [0,1,2]),  Swap('swap', [0,1]), X('x', [0])]
 
 
 if __name__ == "__main__":

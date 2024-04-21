@@ -108,6 +108,12 @@ class Index:
     def addSlope(self,num):
         self.slope+=num
 
+    def value(self, n):
+        if self.rev:
+            return self.slope * n - self.offset
+        else:
+            return self.slope * n + self.offset
+
     def __str__(self) -> str:
         result = "n"
         if self.slope>1:

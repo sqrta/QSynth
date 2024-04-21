@@ -4,6 +4,7 @@ from adt import phase, sumPhase, sumPhaseMulti
 from component import *
 from z3tool import *
 import time
+from itertools import product
 import copy
 
 c=4
@@ -105,7 +106,7 @@ def verifyBase(compon, spec, pre, k, size):
 
 def verifyInduct(compon, spec, pre, dir, k=1, move=1, size=lambda x: x,rev=False):
     x, y, n = BitVecs('x y n', MAXL)
-    # print(compon[0][0].name,compon[1][0].name)
+    # print(k, compon[0][0].name,compon[1][0].name)
     start = time.time()
     precondition = pre(n, x, y) if pre else True
     left = inductk(spec, 0, n, x, y).z3exp()
@@ -184,10 +185,19 @@ def inductcase(spec, gateSet, dir,  pre=None, base=1, k=1,rev=False):
     size = lambda x: k*x
     gi = None
     database = gateSet
-
+    origin_len = len(StandardGateSet)
+    
     # Add gate no need for base case and predefined modules
-    database=[[Subtractor('sub', [0,1,Index(1)], params={'c':c}), Cadder('cadd', [0,1,Index(1)], params={'c':c}), X('x', registers=['n+7'])],[HN("Hn", [Index(1)]), CNOT2('CNOT2')], tele('tele', [Index(1), Index(2), Index(3)]), CCX_N("ccxn"),Toffolin("toff", [Index(1), Index(2,-1), Index(2)]),MAJ("maj", [0,1,Index(1,1)]), UMA("uma",[0,1,Index(1,1)]),  Xmaj("xmaj",[0,1,Index(1,1)]), Xuma("xuma", [0,1,Index(1,1)]),HN("Hn", [Index(1)])] + database
-
+    predefine=database[:-origin_len]+[[H0("H"), CNOT('cx')], tele('tele', [Index(1), Index(2), Index(3)]), CCX_N("ccxn"), Xmaj("xmaj",[0,1,Index(1,1)]), Xuma("xuma", [0,1,Index(1,1)])] + database[-origin_len:]
+    database = []
+    for comp in predefine:
+        if isinstance(comp, component):
+            database += comp.expandIndex()
+        elif isinstance(comp, list):
+            comps = [c.expandIndex() for c in comp]
+            database += [list(c) for c in product(*comps)]
+        else:
+            database.append(comp)
     if dir == 'both':  
         for leftone in database:
             for rightone in database:

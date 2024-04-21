@@ -2,7 +2,7 @@
 import time
 from z3tool import *
 from qsynth import synthesis, StandardGateSet, PPSA, Input, getSpec, SumVarClaim,SumExpr, OutputIndex
-from component import Subtractor,Cadder
+from component import *
 
 def QFTspec(n, x, y):
     u = BVtrunc(x, n)*reverse(BVtrunc(y, n), n)
@@ -84,6 +84,7 @@ if __name__ == "__main__":
     print(f'stack_ww case uses {end-start}s')
     filewrite(prog.toQiskit('stack_ww'), 'Stack_ww.py')
 
+
     start = time.time()
     spec = PPSA(beta=lambda n: 2, phaseSum=GHZspec)
     prog = synthesis(spec, StandardGateSet, hypothesis = lambda n,x,y : x==bv(0))
@@ -112,9 +113,10 @@ if __name__ == "__main__":
     print(f'FullAdder case uses {end-start}s')
     filewrite(prog.toQiskit('FullAdder'), 'FullAdder.py')
 
+    caseSet = [MAJ("maj"), UMA("uma")]
     start = time.time()
     spec = PPSA(beta=lambda n: 1, phaseSum=RipAddSpec)
-    prog = synthesis(spec, StandardGateSet, hypothesis =lambda n,x,y : BVref(x,0)==0)
+    prog = synthesis(spec, caseSet+StandardGateSet, hypothesis =lambda n,x,y : BVref(x,0)==0)
     end =time.time()
     print(f'RippleAdder case uses {end-start}s')
     filewrite(prog.toQiskit('RippleAdder'), 'RippleAdder.py')
@@ -133,16 +135,18 @@ if __name__ == "__main__":
     print(f'ToffoliN case uses {end-start}s')
     filewrite(prog.toQiskit('ToffoliN'), 'ToffoliN.py')
 
+    caseSet = [CRZN("Zn", [Index(1)]),]
     start = time.time()
     spec = PPSA(beta=lambda n: 2<<n, phaseSum=QFTspec)
-    prog = synthesis(spec, StandardGateSet, hypothesis = lambda n,x,y : True)
+    prog = synthesis(spec, caseSet + StandardGateSet, hypothesis = lambda n,x,y : True)
     end =time.time()
     print(f'QFT case uses {end-start}s')
     filewrite(prog.toQiskit('QFT'), 'QFT.py')  
     
+    caseSet = [[Subtractor('sub', params={'c':c}), Cadder('cadd', params={'c':c}), X('x')]]
     start = time.time()
     spec = PPSA(beta=lambda n: 1, phaseSum=inversionSpec)
-    prog = synthesis(spec, StandardGateSet, hypothesis = lambda n,x,y : And(n>0,BVtrunc(x,2*c+n-1,c)==(bv(1)<<(c+n))))
+    prog = synthesis(spec, caseSet+StandardGateSet, hypothesis = lambda n,x,y : And(n>0,BVtrunc(x,2*c+n-1,c)==(bv(1)<<(c+n))))
     end =time.time()
     print(f'inversion case uses {end-start}s')
     filewrite(prog.toQiskit('Inversion', offset=2*c), 'Inversion.py')      
