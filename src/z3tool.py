@@ -113,6 +113,9 @@ def count(vector,length):
         counter += ZeroExt(length-1, Extract(i,i,vector))
     return counter
 
+def XorAll(v, length = MAXL):
+    return xorSum(bv(0), v, length)
+
 def xorSum(x,y,length=MAXL):
     return BVref(count(x^y, length), 0)
 

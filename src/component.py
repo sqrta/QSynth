@@ -322,10 +322,11 @@ class CNOT(component):
         return CNOT('ccx', [ctrl]+ self.registers)
     
     def expandIndex(self, k=1):
+        if k==1:
+            return [CNOT('cx', [Index(1, -1), Index(1)]), CNOT('cx', [Index(1), Index(1, -1)])]
         if k>=2:
-            return [CNOT('cx', [Index(1), Index(2)]), CNOT('cx', [Index(1, -1), Index(1)])]
-        else:
-            return [CNOT('cx', [Index(1, -1), Index(1)])]
+            return [CNOT('cx', [Index(1), Index(2)])]
+            
 
 class Xmaj(component):
     def alpha(self, n, x, y):
@@ -344,6 +345,11 @@ class Xmaj(component):
     def decompose(self):
         return [X("x",[Index(3,1,True)]),CNOT('cx', [Index(2,1,True),Index(3,1,True)]), CNOT('cx', [Index(2,1,True), Index(2,0,True)]), Toffoli('ccx', [Index(2,0,True), Index(3,1,True), Index(2,1,True)])]
     
+    def expandIndex(self, k=1):
+        if k>=2:
+            return [self]
+        return []
+    
 class Xuma(component):
     def alpha(self, n, x, y):
         params=[]
@@ -360,6 +366,11 @@ class Xuma(component):
 
     def decompose(self):
         return [Toffoli('ccx', [Index(2,0,True), Index(3,1,True), Index(2,1,True)]),  CNOT('cx', [Index(2,1,True), Index(2,0,True)]), CNOT('cx', [Index(2,0,True), Index(3,1,True)]), X("x", [Index(3,1,True)])]
+    
+    def expandIndex(self, k=1):
+        if k>=2:
+            return [self]
+        return []
     
 class nparH(component):
     def alpha(self, n, x, y):
@@ -414,6 +425,11 @@ class tele(component):
 
     def decompose(self):
         return [H0("h",[Index(2)]),CNOT('cx', [Index(2),Index(3)]), CNOT('cx', [Index(1), Index(2)]), H0('h', [Index(1)])]
+    
+    def expandIndex(self, k=1):
+        if k>=3:
+            return [self]
+        return []
 
 class CCX_N(component):
     def alpha(self, n, x, y):
@@ -433,6 +449,11 @@ class CCX_N(component):
     def decompose(self):
         return [Toffoli('ccx', [Index(1), Index(2), Index(3)]), CNOT('cx', [Index(1), Index(2)]), Toffoli('ccx', [Index(2), 0, Index(3)]),
                 CNOT('cx', [Index(2), 0]), CNOT('cx', [Index(1), Index(2)]), Swap('swap', [0, Index(3)])]
+    
+    def expandIndex(self, k=1):
+        if k>=3:
+            return [self]
+        return []
 
 
 class MAJ(component):

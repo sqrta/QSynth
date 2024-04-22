@@ -72,6 +72,14 @@ def Even_num(n, x, y):
     Eq = Equal(BVref(y,0), bv(0))
     return [(Eq, bv(0))]
 
+def Even_Parity(n, x, y):
+    Eq = Equal(XorAll(y), bv(0))
+    return [(Eq, bv(0))]
+
+def Odd_Parity(n, x, y):
+    Eq = Equal(XorAll(y), bv(1))
+    return [(Eq, bv(0))]
+
 def Odd_num(n, x, y):
     Eq = Equal(BVref(y,0), bv(1))
     return [(Eq, bv(0))]
@@ -84,6 +92,20 @@ def filewrite(string, path):
         f.write(string)
 
 if __name__ == "__main__":
+
+    start = time.time()
+    spec = PPSA(beta=lambda n: 2<<(n-1), phaseSum=Even_Parity)
+    prog = synthesis(spec, StandardGateSet, hypothesis =lambda n,x,y : And(BVtrunc(x,n)==0))
+    end =time.time()
+    print(f'Even_parity case uses {end-start}s')
+    filewrite(prog.toQiskit('Even_parity'), 'Even_parity.py')
+
+    start = time.time()
+    spec = PPSA(beta=lambda n: 2<<(n-1), phaseSum=Odd_Parity)
+    prog = synthesis(spec, StandardGateSet, hypothesis =lambda n,x,y : And(BVtrunc(x,n)==0))
+    end =time.time()
+    print(f'Odd_parity case uses {end-start}s')
+    filewrite(prog.toQiskit('Odd_parity'), 'Odd_parity.py')
 
     start = time.time()
     spec = PPSA(beta=lambda n: 2<<(n-1), phaseSum=Even_num)

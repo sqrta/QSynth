@@ -188,7 +188,7 @@ def inductcase(spec, gateSet, dir,  pre=None, base=1, k=1,rev=False):
     origin_len = len(StandardGateSet)
     
     # Add gate no need for base case and predefined modules
-    predefine=database[:-origin_len]+[tele('tele', [Index(1), Index(2), Index(3)]), CCX_N("ccxn"), Xmaj("xmaj",[0,1,Index(1,1)]), Xuma("xuma", [0,1,Index(1,1)])] + database[-origin_len:] + [[H0("H"), CNOT('cx')]]
+    predefine=database[:-origin_len]+[tele('tele', [Index(1), Index(2), Index(3)]), CCX_N("ccxn"), Xmaj("xmaj",[0,1,Index(1,1)]), Xuma("xuma", [0,1,Index(1,1)])] + database[-origin_len:] + [[H("H"), CNOT('cx')]]
     database = []
     for comp in predefine:
         if isinstance(comp, component):
@@ -300,6 +300,7 @@ def C_RZ(y, t, n, m):
     return Equal(BVref(y, t), 1)*(BVref(y, t-n) << (m-n-1))
 
 def search(specification, database, dir,  pre=None, base=1, k=1, offset=0,rev=False):
+
     size = lambda x: k*x+offset
     gb = []
     spec = specification.phaseSum
@@ -317,6 +318,8 @@ def search(specification, database, dir,  pre=None, base=1, k=1, offset=0,rev=Fa
             gb.append(tmp)
         else:
             gb.append(component('None'))
+    if k!=2 and rev == True:
+        return gb,None
     gi = inductcase(spec, database, dir,  pre, k=k, base= base,rev=rev)
     end = time.time()
     # print("Base step uses {0}s".format(end-start))
