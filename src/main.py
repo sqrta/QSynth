@@ -93,7 +93,7 @@ if __name__ == "__main__":
     filewrite(prog.toQiskit('Even'), 'Even.py')
 
     start = time.time()
-    spec = PPSA(beta=lambda n: 2<<(n-1), phaseSum=Even_num)
+    spec = PPSA(beta=lambda n: 2<<(n-1), phaseSum=Odd_num)
     prog = synthesis(spec, StandardGateSet, hypothesis =lambda n,x,y : And(BVtrunc(x,n)==0))
     end =time.time()
     print(f'Odd case uses {end-start}s')
