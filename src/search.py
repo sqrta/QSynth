@@ -188,7 +188,7 @@ def inductcase(spec, gateSet, dir,  pre=None, base=1, k=1,rev=False):
     origin_len = len(StandardGateSet)
     
     # Add gate no need for base case and predefined modules
-    predefine=database[:-origin_len]+[[H0("H"), CNOT('cx')], tele('tele', [Index(1), Index(2), Index(3)]), CCX_N("ccxn"), Xmaj("xmaj",[0,1,Index(1,1)]), Xuma("xuma", [0,1,Index(1,1)])] + database[-origin_len:]
+    predefine=database[:-origin_len]+[(H('h')),[H0("H"), CNOT('cx')], tele('tele', [Index(1), Index(2), Index(3)]), CCX_N("ccxn"), Xmaj("xmaj",[0,1,Index(1,1)]), Xuma("xuma", [0,1,Index(1,1)])] + database[-origin_len:]
     database = []
     for comp in predefine:
         if isinstance(comp, component):
