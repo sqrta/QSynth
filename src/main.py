@@ -106,6 +106,7 @@ if __name__ == "__main__":
     end =time.time()
     print(f'Odd_parity case uses {end-start}s')
     filewrite(prog.toQiskit('Odd_parity'), 'Odd_parity.py')
+    # Generate solutions for this contest problem https://codeforces.com/contest/1357/problem/C2
 
     start = time.time()
     spec = PPSA(beta=lambda n: 2<<(n-1), phaseSum=Even_num)
