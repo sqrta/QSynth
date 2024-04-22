@@ -68,6 +68,14 @@ def toff_nPlus1(n,x,y):
     BaseEq = Equal(BVtrunc(x,n), BVtrunc(y,n))
     return [(Eq*BaseEq, bv(0))]
 
+def Even_num(n, x, y):
+    Eq = Equal(BVref(y,0), bv(0))
+    return [(Eq, bv(0))]
+
+def Odd_num(n, x, y):
+    Eq = Equal(BVref(y,0), bv(1))
+    return [(Eq, bv(0))]
+
 def Uniform(n, x, y):
     return [(bv(1), bv(0))]
 
@@ -78,12 +86,25 @@ def filewrite(string, path):
 if __name__ == "__main__":
 
     start = time.time()
+    spec = PPSA(beta=lambda n: 2<<(n-1), phaseSum=Even_num)
+    prog = synthesis(spec, StandardGateSet, hypothesis =lambda n,x,y : And(BVtrunc(x,n)==0))
+    end =time.time()
+    print(f'Even case uses {end-start}s')
+    filewrite(prog.toQiskit('Even'), 'Even.py')
+
+    start = time.time()
+    spec = PPSA(beta=lambda n: 2<<(n-1), phaseSum=Even_num)
+    prog = synthesis(spec, StandardGateSet, hypothesis =lambda n,x,y : And(BVtrunc(x,n)==0))
+    end =time.time()
+    print(f'Odd case uses {end-start}s')
+    filewrite(prog.toQiskit('Odd'), 'Odd.py')
+
+    start = time.time()
     spec = PPSA(beta=lambda n: 2<<n, phaseSum=stack_ww)
     prog = synthesis(spec, StandardGateSet, hypothesis =lambda n,x,y : And(BVtrunc(x,2*n)==0, n>0))
     end =time.time()
     print(f'stack_ww case uses {end-start}s')
     filewrite(prog.toQiskit('stack_ww'), 'Stack_ww.py')
-
 
     start = time.time()
     spec = PPSA(beta=lambda n: 2, phaseSum=GHZspec)
@@ -91,6 +112,7 @@ if __name__ == "__main__":
     end =time.time()
     print(f'GHZ case uses {end-start}s')
     filewrite(prog.toQiskit('GHZ'), 'GHZ.py')
+
 
     start = time.time()
     spec = PPSA(beta=lambda n: 1, phaseSum=teleportation)
@@ -105,6 +127,7 @@ if __name__ == "__main__":
     end =time.time()
     print(f'Uniform case uses {end-start}s')
     filewrite(prog.toQiskit('Uniform'), 'Uniform.py')
+
 
     start = time.time()
     spec = PPSA(beta=lambda n: 1, phaseSum=FullAddSpec)

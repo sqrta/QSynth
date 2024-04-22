@@ -56,7 +56,7 @@ class component:
     def My(self, n, y):
         raise(self.name+" does not have My")
     
-    def expandIndex(self):
+    def expandIndex(self, k=1):
         return [self]
 
     def __str__(self) -> str:
@@ -148,7 +148,7 @@ class Toffolin(component):
     def My(self, n, y):
         return self.Mx(n, y)
     
-    def expandIndex(self):
+    def expandIndex(self, k):
         return [Toffolin("toff", [Index(1), Index(2,-1), Index(2)])]
 
     def qiskitName(self):
@@ -171,7 +171,7 @@ class Toffoli(component):
     def qiskitName(self):
         return "ccx"
     
-    def expandIndex(self):
+    def expandIndex(self, k):
         return [self, [Toffolin("toff", [Index(1), Index(2,-1), Index(2)])]]
 
 
@@ -193,8 +193,30 @@ class H0(component):
     def qiskitName(self):
         return "h"
     
-    def expandIndex(self):
+    def expandIndex(self, k):
         return [self, HN("Hn", [Index(1)])]
+    
+class H(component):
+    def alpha(self, n, x, y):
+        targ = self.registers[0].value(n)
+        Eq = Equal(mask(x, [targ]), mask(y, [targ]))
+        d0 = Eq*Equal(BVref(y, targ), bv(0))
+        d1 = Eq*Equal(BVref(y, targ), bv(1))
+        return sumPhase([phase(d0, bv(0)), phase(d1, BVref(x, n))])
+
+    def My(self, n, y):
+        return self.Mx(n, y)
+
+    def Mx(self, n, x):
+        targ = self.registers[0].value(n)
+        qubits = {targ}
+        return setbit(x, qubits)
+
+    def qiskitName(self):
+        return "h"
+    
+    def expandIndex(self, k):
+        return [H("Hn", [Index(1)]),H("H0", [Index(0)]), H("Hn-1", [Index(1,-1)])]
 
 
 class HN(component):
@@ -243,7 +265,7 @@ class X(component):
     def qiskitName(self):
         return "x"
     
-    def expandIndex(self):
+    def expandIndex(self, k):
         return [X('x', registers=['n+7'])]
 
 
@@ -299,8 +321,11 @@ class CNOT(component):
             index.addOffset(1)
         return CNOT('ccx', [ctrl]+ self.registers)
     
-    def expandIndex(self):
-        return [CNOT('cx', [Index(1), Index(2)]), CNOT('cx', [Index(1, -1), Index(1)])]
+    def expandIndex(self, k=1):
+        if k>=2:
+            return [CNOT('cx', [Index(1), Index(2)]), CNOT('cx', [Index(1, -1), Index(1)])]
+        else:
+            return [CNOT('cx', [Index(1, -1), Index(1)])]
 
 class Xmaj(component):
     def alpha(self, n, x, y):
@@ -427,7 +452,7 @@ class MAJ(component):
     def decompose(self):
         return [CNOT('cx', [Index(2,1,True),Index(3,1,True)]), CNOT('cx', [Index(2,1,True), Index(2,0,True)]), Toffoli('ccx', [Index(2,0,True), Index(3,1,True), Index(2,1,True)])]
     
-    def expandIndex(self):
+    def expandIndex(self, k):
         return [MAJ("maj", [0,1,Index(1,1)])]
 
 
@@ -448,7 +473,7 @@ class UMA(component):
     def decompose(self):
         return [Toffoli('ccx', [Index(2,0,True), Index(3,1,True), Index(2,1,True)]),  CNOT('cx', [Index(2,1,True), Index(2,0,True)]), CNOT('cx', [Index(2,0,True), Index(3,1,True)])]
     
-    def expandIndex(self):
+    def expandIndex(self, k):
         return [UMA("uma",[0,1,Index(1,1)])]
 
 
@@ -501,7 +526,7 @@ class Subtractor(component):
         arg = f"list(range(0, {size+1}))+list(range({Index(0)}+{size}, {Index(0)}+{2*size}))"
         return size, arg
     
-    def expandIndex(self):
+    def expandIndex(self, k):
         return [Subtractor('sub', [0,1,Index(1)], params={'c':self.params["c"]})]
 
 class Cadder(component):
@@ -540,7 +565,7 @@ class Cadder(component):
     def source(self):
         return "from CondAdder import CondAdder\n"
     
-    def expandIndex(self):
+    def expandIndex(self, k):
         return [Cadder('cadd', [0,1,Index(1)], params={'c':self.params["c"]})]
 
 def setbit(x, qubits):
@@ -553,7 +578,7 @@ def setbit(x, qubits):
         result.append(xtmp)
     return result
 
-StandardGateSet = [H0("H", ['0']),  CNOT('cx', [Index(1, -1), Index(1)]), Toffoli('ccx', [0,1,2]),  Swap('swap', [0,1]), X('x', [0])]
+StandardGateSet = [H("H", [Index(0)]),  CNOT('cx', [Index(0), Index(0,1)]), Toffoli('ccx', [0,1,2]),  Swap('swap', [0,1]), X('x', [0])]
 
 
 if __name__ == "__main__":

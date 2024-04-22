@@ -192,13 +192,15 @@ def inductcase(spec, gateSet, dir,  pre=None, base=1, k=1,rev=False):
     database = []
     for comp in predefine:
         if isinstance(comp, component):
-            database += comp.expandIndex()
+            database += comp.expandIndex(k)
         elif isinstance(comp, list):
-            comps = [c.expandIndex() for c in comp]
+            comps = [c.expandIndex(k) for c in comp]
             database += [list(c) for c in product(*comps)]
         else:
             database.append(comp)
-    if dir == 'both':  
+    # print([str(i) for i in database])
+    
+    if dir == 'both': 
         for leftone in database:
             for rightone in database:
                 compon = pack(leftone, rightone)
@@ -213,7 +215,6 @@ def inductcase(spec, gateSet, dir,  pre=None, base=1, k=1,rev=False):
         compon = pack(Ident('I'),item) if dir == "right" else pack(item,Ident('I'))
 
         ri = verifyInduct(compon, spec, pre, dir, k, base, size,rev=rev)
-
         if ri == sat:
             gi = compon
             return gi
