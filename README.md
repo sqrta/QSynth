@@ -9,6 +9,7 @@ pip install z3-solver
 ```
 run the command below to reproduce the results in paper.
 ```
+mkdir result
 python src/main.py
 ```
 All result program files will be synthesized in the `./result` folder. They are Qiskit functions that can generate the corresponding circuits. This procedure needs 15~30 minutes to complete.
