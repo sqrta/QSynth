@@ -1,6 +1,6 @@
 src/__pycache__/
 try
-*.py
+result/*.py
 src/RippleAdder.py
 src/FullAdder.py
 src/RippleAdder.py
@@ -8,3 +8,4 @@ src/GHZ.py
 document/oracle*
 src/matrix/
 __pycache__/
+src/search2.py

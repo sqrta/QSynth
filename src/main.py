@@ -88,7 +88,8 @@ def Uniform(n, x, y):
     return [(bv(1), bv(0))]
 
 def filewrite(string, path):
-    with open(path, 'w') as f:
+    root = 'result/'
+    with open(root+path, 'w') as f:
         f.write(string)
 
 if __name__ == "__main__":
