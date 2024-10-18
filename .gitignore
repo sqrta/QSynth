@@ -9,4 +9,3 @@ document/oracle*
 src/matrix/
 __pycache__/
 src/search2.py
-src/temp.py

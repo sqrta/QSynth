@@ -10,7 +10,11 @@ def findsubsets(s, n):
 def allsubset(s):
     return reduce(lambda a, b: a+b, [findsubsets(s, i) for i in range(len(s)+1)])
 
-
+def getIndexValue(index, n):
+    if isinstance(index, Index):
+        return index.value(n)
+    else:
+        return index
 Uo = BitVec('f', MAXL)
 
 
@@ -156,9 +160,9 @@ class Toffolin(component):
     
 class Toffoli(component):
     def alpha(self, n, x, y):
-        r0 = self.registers[0].value(n)
-        r1 = self.registers[1].value(n)
-        r2 = self.registers[2].value(n)
+        r0 = getIndexValue(self.registers[0], n)
+        r1 = getIndexValue(self.registers[1], n)
+        r2 = getIndexValue(self.registers[2], n)
 
         Eq1 = Equal(mask(x, [r2]), mask(y, [r2]))
         result = (BVref(x,r0) & BVref(x, r1)) ^ BVref(x, r2)
@@ -166,7 +170,7 @@ class Toffoli(component):
         return getSumPhase([(Eq1*Eq2, bv(0))])
 
     def Mx(self, n, x):
-        qubits = {self.registers[2].value(n)}
+        qubits = {getIndexValue(self.registers[2], n)}
         return setbit(x, qubits)
     
     def My(self, n, y):
@@ -202,7 +206,7 @@ class H0(component):
     
 class H(component):
     def alpha(self, n, x, y):
-        targ = self.registers[0].value(n)
+        targ = getIndexValue(self.registers[0], n)
         Eq = Equal(mask(x, [targ]), mask(y, [targ]))
         d0 = Eq*Equal(BVref(y, targ), bv(0))
         d1 = Eq*Equal(BVref(y, targ), bv(1))
@@ -212,7 +216,7 @@ class H(component):
         return self.Mx(n, y)
 
     def Mx(self, n, x):
-        targ = self.registers[0].value(n)
+        targ = getIndexValue(self.registers[0], n)
         qubits = {targ}
         return setbit(x, qubits)
 
@@ -300,14 +304,14 @@ class X(component):
     
 class CNOT(component):
     def alpha(self, n, x, y):
-        targ = self.registers[1].value(n)
-        ctrl = self.registers[0].value(n)
-        Eq = Equal(BVtrunc(x, targ-1), BVtrunc(y, targ - 1))
+        targ = getIndexValue(self.registers[1], n)
+        ctrl = getIndexValue(self.registers[0], n)
+        Eq = Equal(mask(x, [targ]), mask(y, [targ]))
         d0 = Eq*Equal(BVref(y, targ), BVref(y, ctrl) ^ BVref(x, targ))
         return sumPhase([phase(d0, bv(0))])
 
     def Mx(self, n, x):
-        targ = self.registers[1].value(n)
+        targ = getIndexValue(self.registers[1], n)
         qubits = {targ}
         return setbit(x, qubits)
 
