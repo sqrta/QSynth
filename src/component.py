@@ -156,13 +156,17 @@ class Toffolin(component):
     
 class Toffoli(component):
     def alpha(self, n, x, y):
-        Eq1 = Equal(mask(x, [2]), mask(y, [2]))
-        result = (BVref(x,0) & BVref(x, 1)) ^ BVref(x, 2)
-        Eq2 = Equal(BVref(y,2), result)
+        r0 = self.registers[0].value(n)
+        r1 = self.registers[1].value(n)
+        r2 = self.registers[2].value(n)
+
+        Eq1 = Equal(mask(x, [r2]), mask(y, [r2]))
+        result = (BVref(x,r0) & BVref(x, r1)) ^ BVref(x, r2)
+        Eq2 = Equal(BVref(y,r2), result)
         return getSumPhase([(Eq1*Eq2, bv(0))])
 
     def Mx(self, n, x):
-        qubits = {2}
+        qubits = {self.registers[2].value(n)}
         return setbit(x, qubits)
     
     def My(self, n, y):
