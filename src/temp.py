@@ -25,7 +25,7 @@ for i in range(1,len(cir)+1):
     funcs[i] = f
 right = funcs[5](1,x,y)
 right = RecurPackRight(cir, fun0, n, x, y)
-claim1 = Implies(And(BVref(x,2)==0,BVref(x,3)==0, ULT(x,16), ULT(y,16)),
+claim1 = Implies(And(BVref(x,3)==0, ULT(x,16), ULT(y,16)),
                  And(left.z3exp() == right.z3exp(), left.deltas() == right.deltas()))
 s1 = Solver()
 s1.add(Not(claim1))

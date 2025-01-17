@@ -179,6 +179,7 @@ if __name__ == "__main__":
     end = time.time()
     print(f"stack_ww case uses {end-start}s")
     filewrite(prog.toQiskit("stack_ww"), "Stack_ww.py")
+    # To generate stack_ww state from this question https://quantumcomputing.stackexchange.com/questions/27350/how-to-initialize-a-n-qubit-system-in-this-specific-state
 
     start = time.time()
     spec = PPSA(beta=lambda n: 2, phaseSum=GHZspec)
